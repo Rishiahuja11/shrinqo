@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: shrinqo
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: node server.js
+    envVars:
+      - key: SITE_URL
+        value: https://short.smp45.qzz.io
+      - key: NODE_ENV
+        value: production

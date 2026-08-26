@@ -1,0 +1,7 @@
+node_modules
+linkshort.db
+linkshort.db-shm
+linkshort.db-wal
+.git
+.gitignore
+README.md
