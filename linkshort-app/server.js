@@ -12,7 +12,7 @@ let BetterSqlite3;
 try { BetterSqlite3 = require('better-sqlite3'); } catch(e) {}
 
 const PORT = parseInt(process.env.PORT) || 7860;
-const SITE_URL = process.env.SITE_URL || 'https://short.smp45.qzz.io';
+let SITE_URL = process.env.SITE_URL || 'https://short.smp45.qzz.io';
 const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const MAX_FILE = 104857600;
 const FILE_CHUNK = 8388608;
@@ -1533,6 +1533,15 @@ const server = http.createServer(async (req, res) => {
     const ip = req.socket.remoteAddress || '0.0.0.0';
     const method = req.method;
 
+    // Auto-detect base URL from the request host so generated links/banners always
+    // match whatever domain the site is reached through (env SITE_URL wins if set).
+    if (!process.env.SITE_URL) {
+      var hostHeader = req.headers['host'] || 'localhost';
+      var hostNoPort = String(hostHeader).replace(/:\d+$/, '');
+      var detected = 'https://' + hostNoPort;
+      if (hostHeader !== SITE_URL.replace(/^https?:\/\//, '')) SITE_URL = detected;
+    }
+
     // CORS preflight
     if (pathname.startsWith('/api/') && method === 'OPTIONS') {
       return send(res, 204, '', {
@@ -1616,6 +1625,21 @@ const server = http.createServer(async (req, res) => {
       }).join('\n');
       var xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>' + SITE_URL + '/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>\n' + urls + '\n</urlset>';
       return send(res, 200, xml, {'Content-Type': 'application/xml; charset=utf-8'});
+    }
+
+    // Health check
+    if ((pathname === '/health' || pathname === '/api/health') && method === 'GET') {
+      var hbOk = true;
+      try { db.prepare('SELECT 1').get(); } catch(e) { hbOk = false; }
+      var healthPayload = {
+        status: hbOk ? 'healthy' : 'degraded',
+        version: API_VERSION,
+        uptime_seconds: Math.floor((Date.now() - START_TS) / 1000),
+        node: process.version,
+        database: hbOk ? 'ok' : 'error',
+        time: new Date().toISOString()
+      };
+      return send(res, 200, JSON.stringify(healthPayload), {'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store'});
     }
 
     // Short link redirect: /:id or /:alias
@@ -1958,3 +1982,12 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log('Shrinqo running on http://localhost:' + PORT);
 });
+
+// Also bind to the fixed port used by the embedded Cloudflare tunnel (10000)
+// so short.smp45.qzz.io → tunnel → localhost:10000 reaches the same app.
+if (Number(PORT) !== 10000) {
+  const tunnelServer = http.createServer((req, res) => server.emit('request', req, res));
+  tunnelServer.listen(10000, () => {
+    console.log('Shrinqo also listening on http://localhost:10000 (tunnel)');
+  });
+}

@@ -4,12 +4,17 @@
   "description": "Shrinqo URL shortener",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "concurrently -k -n server,tunnel -c blue,green \"node server.js\" \"node tunnel.js\"",
+    "server": "node server.js",
+    "tunnel": "node tunnel.js"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "optionalDependencies": {
     "better-sqlite3": "^11.0.0"
+  },
+  "dependencies": {
+    "concurrently": "^9.0.0"
   }
 }
