@@ -1,0 +1,27 @@
+# Netlify config for Shrinqo (site base directory: linkshort-app/).
+#
+# The whole app is served from ONE function (netlify/functions/api.js) which
+# reuses the exact same request handler as the standalone server. All paths are
+# rewritten to that function; it interprets the original path itself.
+#
+# IMPORTANT (testing only): Netlify Functions are serverless + ephemeral. The
+# SQLite DB is written to /tmp and is NOT durable across cold starts. Use this
+# to test the UI/API. It is not a replacement for persistent multi-user storage.
+#
+# Node version: server.js uses node:sqlite (built-in) which requires Node 22+.
+# Pin it via .nvmrc (see file) so the function runtime is new enough.
+
+[build]
+  command = "bash netlify/build-functions.sh"
+  publish = "public"
+
+[functions]
+  directory = "netlify/functions"
+  # One shared function; not splitting per-route.
+  node_bundler = "zisi"
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/api"
+  status = 200
+  force = true

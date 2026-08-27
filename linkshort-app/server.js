@@ -1605,7 +1605,9 @@ function handleOps(req, res, route, method, jsonBody, rawBody) {
 }
 
 
-const server = http.createServer(async (req, res) => {
+// Core request handler. Runs standalone (see listen() guard below) or is
+// reused by the Netlify adapter, which shims req/res to this same function.
+async function handleRequest(req, res) {
 
   try {
     const url = new URL(req.url, 'http://localhost');
@@ -2057,9 +2059,16 @@ const server = http.createServer(async (req, res) => {
     console.error('Server error:', err);
     try { send(res, 500, 'Internal error', {'Content-Type': 'text/plain'}); } catch(e) {}
   }
-});
+} // end handleRequest
 
 const SERVER_PORT = 10000;
-server.listen(SERVER_PORT, () => {
-  console.log('Shrinqo running on http://localhost:' + SERVER_PORT);
-});
+
+let server = null;
+if (require.main === module) {
+  server = http.createServer(handleRequest);
+  server.listen(SERVER_PORT, () => {
+    console.log('Shrinqo running on http://localhost:' + SERVER_PORT);
+  });
+}
+
+module.exports = { handleRequest, server };
