@@ -7,6 +7,6 @@ services:
     startCommand: node server.js
     envVars:
       - key: SITE_URL
-        value: https://short.smp45.qzz.io
+        value: https://shrinqo.onrender.com
       - key: NODE_ENV
         value: production
