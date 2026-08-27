@@ -4,7 +4,17 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
+const dns = require('dns');
+const net = require('net');
 crypto.pbkdf2Promise = util.promisify(crypto.pbkdf2);
+
+// Prevent a single uncaught async rejection from crashing the whole process.
+process.on('unhandledRejection', function(reason) {
+  try { console.error('Unhandled rejection:', reason && reason.stack ? reason.stack : reason); } catch (e) {}
+});
+process.on('uncaughtException', function(err) {
+  try { console.error('Uncaught exception:', err && err.stack ? err.stack : err); } catch (e) {}
+});
 
 let DatabaseSync;
 try { DatabaseSync = require('node:sqlite').DatabaseSync; } catch(e) {}
@@ -201,6 +211,15 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+// JSON.stringify variant safe to embed inside an inline <script>: escapes <
+// and </script> so user-controlled strings cannot break out of the script tag.
+function safeJson(v) {
+  return JSON.stringify(v)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 function isCrawler(ua) {
   return /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Googlebot|Bingbot|Pinterest|curl|wget|python/i.test(ua || '');
 }
@@ -303,7 +322,8 @@ function createSession(name) {
 }
 
 function sessionCookie(req, token) {
-  var secure = (req.headers['x-forwarded-proto'] || '').includes('https') || !!req.socket.encrypted;
+  // The service is always served over HTTPS (Cloudflare tunnel / Render TLS).
+  var secure = true;
   if (token) return 'ls_sess=' + token + '; Path=/; Max-Age=' + SESSION_TTL + '; HttpOnly; SameSite=Lax' + (secure ? '; Secure' : '');
   return 'ls_sess=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax' + (secure ? '; Secure' : '');
 }
@@ -518,7 +538,7 @@ function stepsPage(link) {
   var host = '';
   try { host = new URL(dest).hostname.replace(/^www\./, ''); } catch (e) {}
   var letter = (host || 'u').charAt(0).toUpperCase();
-  var dataJs = 'var T=' + JSON.stringify(dest) + ',H=' + JSON.stringify(host || 'destination') + ';';
+  var dataJs = 'var T=' + safeJson(dest) + ',H=' + safeJson(host || 'destination') + ';';
   // Banner: show if fetched within last 10 minutes
   var bannerHtml = '';
   if (link.banner_url && link.banner_fetched_at) {
@@ -634,18 +654,70 @@ function parseHeadMeta(s) {
 function isPrivateHost(hostname) {
   var h = String(hostname || '').toLowerCase();
   if (!h) return true;
-  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal')) return true;
+  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal') || h.endsWith('.home.arpa')) return true;
   if (h === '::1' || h === '[::1]' || h === '0.0.0.0' || h === '::') return true;
+  if (h.indexOf(':') !== -1) {
+    // IPv6 literal (strip brackets)
+    var v6 = h.replace(/^\[|\]$/g, '');
+    if (isPrivateIp(v6)) return true;
+  }
   var m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (m) {
-    var a = +m[1], b = +m[2];
+    if (isPrivateIp(h)) return true;
+  }
+  return false;
+}
+
+// True if the given IPv4/IPv6 address is loopback, private, link-local,
+// multicast, or otherwise non-routable (used to block SSRF targets). Hosts
+// should be resolved to their addresses and this applied to each one.
+function isPrivateIp(addr) {
+  if (net.isIPv4(addr)) {
+    var p = addr.split('.').map(Number);
+    var a = p[0], b = p[1];
     if (a === 0 || a === 10 || a === 127) return true;
     if (a === 192 && b === 168) return true;
     if (a === 172 && b >= 16 && b <= 31) return true;
     if (a === 169 && b === 254) return true;
-    if (a >= 224) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+    if (a >= 224) return true; // multicast + reserved
+    return false;
+  }
+  if (net.isIPv6(addr)) {
+    var low = addr.toLowerCase();
+    if (low === '::' || low === '::1' || low.indexOf('::ffff:') === 0) {
+      if (low === '::' || low === '::1') return true;
+      // IPv4-mapped IPv6: check the embedded IPv4
+      var mapped = low.split('::ffff:')[1];
+      if (mapped && net.isIPv4(mapped)) return isPrivateIp(mapped);
+      return true;
+    }
+    if (low.indexOf('fc') === 0 || low.indexOf('fd') === 0) return true; // fc00::/7 unique local
+    var first = low.split(':')[0];
+    if (first === 'fe8' || first === 'fe9' || first === 'fea' || first === 'feb') return true; // fe80::/10 link-local
+    if (first === 'ff') return true; // multicast ff00::/8
+    var doc = low.slice(0, 4);
+    if (doc === '2001' && low.slice(5, 9) === 'db8') return true; // documentation
+    return false;
   }
   return false;
+}
+
+// Async: resolve a hostname to all addresses and reject if any map to a
+// private/loopback/link-local IP (defends against DNS-rebinding style SSRF).
+function isPrivateResolvedTarget(hostname) {
+  return new Promise(function(resolve) {
+    if (isPrivateHost(hostname)) return resolve(true);
+    dns.lookup(String(hostname).replace(/^\[|\]$/g, ''), { all: true }, function(err, addrs) {
+      if (err) return resolve(true); // cannot resolve -> refuse
+      var addrs4 = addrs || [];
+      var bad = addrs4.some(function(a) {
+        var ip = (a && a.address) || '';
+        return isPrivateIp(ip);
+      });
+      resolve(bad);
+    });
+  });
 }
 
 function fetchUrlMeta(target, depth) {
@@ -656,6 +728,13 @@ function fetchUrlMeta(target, depth) {
     try { u = new URL(target); } catch(e) { return finish(null); }
     if ((u.protocol !== 'http:' && u.protocol !== 'https:') || isPrivateHost(u.hostname)) return finish(null);
     if ((depth || 0) > 2) return finish(null);
+    // Defend against DNS-rebinding / private-IP SSRF: resolve the host and
+    // refuse if any address is loopback, private, or link-local.
+    isPrivateResolvedTarget(u.hostname).then(function(privateIp) {
+      if (privateIp) return finish(null);
+      proceedFetch();
+    });
+    function proceedFetch() {
     var mod = u.protocol === 'https:' ? https : http;
     var req = mod.get(u.href, {
       headers: {
@@ -692,6 +771,7 @@ function fetchUrlMeta(target, depth) {
     });
     req.on('timeout', function() { req.destroy(); });
     req.on('error', function() { finish(null); });
+    }
   });
 }
 

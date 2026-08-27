@@ -1,6 +1,6 @@
 /* SafeAds v2 — fills ad containers + sticky bar + modal. All clicks -> direct link. */
 const SafeAds = {
-  V: 17,
+  V: 18,
   directUrl: 'https://omg10.com/4/11468566',
   rotateMs: 6000,
 

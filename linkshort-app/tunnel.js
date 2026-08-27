@@ -3,9 +3,14 @@ const fs = require('fs');
 
 const { bin, install } = require('cloudflared');
 
-const TOKEN = process.env.TUNNEL_TOKEN || 'eyJhIjoiNTA3N2NkM2Q2YWZmZjYyZTgzODhiYzVmM2RmZmQ1YTgiLCJ0IjoiM2EzYzk0NTEtMmNmYy00YmU0LWE4ODAtZjI4Yzc0OTU2NjRhIiwicyI6IkxaUnBZdXkwOHVMeWdaWmJnVHo2dityNkhzaklWVjBqQTRIblBJNEh3NTh3WUJvUFcrcUwybm5BSjU2Sjh1NEVzMitrVlh5c3dTQ0FoYmlGNEdPZjdnPT0ifQ==';
+const TOKEN = process.env.TUNNEL_TOKEN;
 
 async function main() {
+  if (!TOKEN) {
+    console.error('[tunnel] No TUNNEL_TOKEN env var set. Set it to the Cloudflare tunnel token to start the tunnel.');
+    process.exit(0);
+  }
+
   let binary = bin;
   if (!fs.existsSync(binary)) {
     console.log('[tunnel] Installing cloudflared binary...');

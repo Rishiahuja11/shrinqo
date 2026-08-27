@@ -609,7 +609,7 @@ async function shortenUrl(){
     // Fetch link details to get banner URL (async, non-blocking)
     lastBanner='';
     fetch('/api/v1/links/'+d.id).then(function(r2){return r2.json()}).then(function(d2){
-      if(d2 && d2.banner_url) lastBanner=d2.banner_url;
+      if(d2 && d2.data && d2.data.banner_url) lastBanner=d2.data.banner_url;
     }).catch(function(){});
     var normalized=/^https?:\/\//i.test(url)?url:'https://'+url;
     var pseudo={id:d.id,url:normalized,clicks:0,created:new Date().toISOString()};
