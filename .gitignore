@@ -3,3 +3,5 @@ linkshort.db
 linkshort.db-shm
 linkshort.db-wal
 *.log
+.cache/
+linkshort-app/.cache/

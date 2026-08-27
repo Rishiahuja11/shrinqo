@@ -3,7 +3,8 @@
   "version": "3.0.0",
   "engines": { "node": ">=18.0.0" },
   "scripts": {
-    "build": "cd linkshort-app && npm install --omit=dev",
-    "start": "cd linkshort-app && npm run start"
-  }
+    "build": "cd linkshort-app && npm install --omit=dev --ignore-scripts",
+    "start": "node start.js"
+  },
+  "dependencies": {}
 }

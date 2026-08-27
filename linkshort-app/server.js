@@ -837,7 +837,7 @@ setInterval(function () {
 if (process.env.DB_PATH === '/data') {
   setInterval(function () {
     try {
-      var req = http.get('http://127.0.0.1:' + PORT + '/health', function (res) { res.resume(); });
+      var req = http.get('http://127.0.0.1:' + 10000 + '/health', function (res) { res.resume(); });
       req.on('error', function () {});
     } catch (e) {}
   }, 600000).unref();
@@ -1979,15 +1979,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log('Shrinqo running on http://localhost:' + PORT);
+const SERVER_PORT = 10000;
+server.listen(SERVER_PORT, () => {
+  console.log('Shrinqo running on http://localhost:' + SERVER_PORT);
 });
-
-// Also bind to the fixed port used by the embedded Cloudflare tunnel (10000)
-// so short.smp45.qzz.io → tunnel → localhost:10000 reaches the same app.
-if (Number(PORT) !== 10000) {
-  const tunnelServer = http.createServer((req, res) => server.emit('request', req, res));
-  tunnelServer.listen(10000, () => {
-    console.log('Shrinqo also listening on http://localhost:10000 (tunnel)');
-  });
-}

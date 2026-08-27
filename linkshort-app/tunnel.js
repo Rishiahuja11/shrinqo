@@ -1,58 +1,25 @@
 const { spawn } = require('child_process');
 const fs = require('fs');
-const path = require('path');
-const https = require('https');
+
+const { bin, install } = require('cloudflared');
 
 const TOKEN = process.env.TUNNEL_TOKEN || 'eyJhIjoiNTA3N2NkM2Q2YWZmZjYyZTgzODhiYzVmM2RmZmQ1YTgiLCJ0IjoiM2EzYzk0NTEtMmNmYy00YmU0LWE4ODAtZjI4Yzc0OTU2NjRhIiwicyI6IkxaUnBZdXkwOHVMeWdaWmJnVHo2dityNkhzaklWVjBqQTRIblBJNEh3NTh3WUJvUFcrcUwybm5BSjU2Sjh1NEVzMitrVlh5c3dTQ0FoYmlGNEdPZjdnPT0ifQ==';
 
-const CACHE_DIR = process.env.CLOUDFLARED_CACHE || path.join(__dirname, '.cache');
-const BIN = path.join(CACHE_DIR, 'cloudflared');
-
-const DOWNLOAD_URL = 'https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64';
-
-function hasBinary() {
-  try {
-    return fs.existsSync(BIN) && fs.statSync(BIN).size > 1000000;
-  } catch (e) {
-    return false;
-  }
-}
-
-function download() {
-  return new Promise((resolve, reject) => {
-    fs.mkdirSync(CACHE_DIR, { recursive: true });
-    const file = fs.createWriteStream(BIN);
-    const req = https.get(DOWNLOAD_URL, (res) => {
-      if (res.statusCode !== 200) {
-        reject(new Error('Download failed: HTTP ' + res.statusCode));
-        return;
-      }
-      res.pipe(file);
-      file.on('finish', () => {
-        file.close(() => {
-          fs.chmodSync(BIN, 0o755);
-          resolve();
-        });
-      });
-    });
-    req.on('error', (e) => { file.destroy(); reject(e); });
-  });
-}
-
 async function main() {
-  if (!hasBinary()) {
-    console.log('[tunnel] Downloading cloudflared...');
+  let binary = bin;
+  if (!fs.existsSync(binary)) {
+    console.log('[tunnel] Installing cloudflared binary...');
     try {
-      await download();
-      console.log('[tunnel] cloudflared downloaded');
+      binary = await install(bin);
+      console.log('[tunnel] cloudflared installed at ' + binary);
     } catch (e) {
-      console.error('[tunnel] Download failed: ' + e.message);
+      console.error('[tunnel] Install failed: ' + e.message);
       process.exit(1);
     }
   }
 
-  console.log('[tunnel] Starting cloudflared tunnel...');
-  const proc = spawn(BIN, ['tunnel', 'run', '--token', TOKEN], {
+  console.log('[tunnel] Starting cloudflared tunnel to localhost:10000...');
+  const proc = spawn(binary, ['tunnel', 'run', '--token', TOKEN], {
     stdio: 'inherit',
     env: { ...process.env, NO_COLOR: '1' }
   });
@@ -69,9 +36,8 @@ async function main() {
 
   ['SIGINT', 'SIGTERM'].forEach((sig) => {
     process.on(sig, () => {
-      console.log('[tunnel] Received ' + sig + ', stopping tunnel...');
       proc.kill(sig);
-      process.exit(0);
+      setTimeout(() => process.exit(0), 500);
     });
   });
 }
