@@ -17,11 +17,29 @@
 
 [functions]
   directory = "netlify/functions"
-  # One shared function; not splitting per-route.
   node_bundler = "zisi"
 
+# Redirect API + dynamic routes to the function.
+# Without force=true, Netlify first checks for a static file in the publish dir.
+# If a file exists (e.g. /index.html, /icon.svg, /custom.css), it's served
+# directly. Only non-static paths (API routes, short-link IDs) hit the function.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api"
+  status = 200
+
+[[redirects]]
+  from = "/dl/*"
+  to = "/.netlify/functions/api"
+  status = 200
+
+[[redirects]]
+  from = "/health"
+  to = "/.netlify/functions/api"
+  status = 200
+
+# Catch-all for non-existent static files (short link IDs like /g7I6Im)
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/api"
   status = 200
-  force = true

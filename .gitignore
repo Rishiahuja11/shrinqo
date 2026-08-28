@@ -6,4 +6,5 @@ linkshort.db-wal
 .cache/
 linkshort-app/.cache/
 linkshort-app/netlify/functions/_server/
+linkshort-app/netlify/functions/api/_server/
 linkshort-app/.netlify/

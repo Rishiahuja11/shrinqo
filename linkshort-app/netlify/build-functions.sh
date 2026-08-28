@@ -12,7 +12,10 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FUNC_DIR="$ROOT/netlify/functions"
-BUNDLE_DIR="$FUNC_DIR/_server"
+# Directory-based function: everything under netlify/functions/api/ is zipped
+# as the function bundle. server.js + public are copied beside the entry so the
+# function is fully self-contained.
+BUNDLE_DIR="$FUNC_DIR/api/_server"
 
 rm -rf "$BUNDLE_DIR"
 mkdir -p "$BUNDLE_DIR"
