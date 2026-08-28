@@ -8,7 +8,9 @@ const path = require('path');
 const fs = require('fs');
 
 // Turso sync must happen BEFORE server.js opens the DB.
-const turso = require('./_server/turso-sync');
+const tursoPath = fs.existsSync(path.join(__dirname, '_server', 'turso-sync.js'))
+  ? './_server/turso-sync' : './turso-sync';
+const turso = require(tursoPath);
 
 exports.handler = async (event, context) => {
   // On first invocation (cold start): sync DB from Turso → /tmp/shrinqo.db
@@ -26,11 +28,15 @@ exports.handler = async (event, context) => {
     try { fs.mkdirSync(process.env.DB_PATH, { recursive: true }); } catch (e) {}
 
     // Require server.js (which opens the local SQLite at /tmp/shrinqo.db)
-    require('./_server/server.js');
+    const serverPath = fs.existsSync(path.join(__dirname, '_server', 'server.js'))
+      ? './_server/server.js' : './server.js';
+    require(serverPath);
     global.__shrinqo_loaded = true;
   }
 
-  const { handleRequest } = require('./_server/server.js');
+  const serverPath = fs.existsSync(path.join(__dirname, '_server', 'server.js'))
+    ? './_server/server.js' : './server.js';
+  const { handleRequest } = require(serverPath);
 
   const { httpMethod, path: p, pathname, queryStringParameters, headers, body, isBase64Encoded } = event;
 

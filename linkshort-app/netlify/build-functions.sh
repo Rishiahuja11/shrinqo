@@ -24,4 +24,8 @@ cp "$ROOT/server.js" "$BUNDLE_DIR/server.js"
 cp "$ROOT/netlify/functions/api/turso-sync.js" "$BUNDLE_DIR/turso-sync.js"
 cp -r "$ROOT/public" "$BUNDLE_DIR/public"
 
-echo "[netlify-build] bundled server.js + public/ -> $BUNDLE_DIR"
+# Also copy flat into api/ for zip deploys (no build step)
+cp "$ROOT/server.js" "$FUNC_DIR/api/server.js"
+cp -r "$ROOT/public" "$FUNC_DIR/api/public"
+
+echo "[netlify-build] bundled server.js + public/ -> $BUNDLE_DIR + $FUNC_DIR/api/"
