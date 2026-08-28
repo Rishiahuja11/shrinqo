@@ -125,23 +125,61 @@ td code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#
 <h2>🚀 Quick start</h2>
 <div class="step"><div class="n">1</div><div><b>Shorten your first link</b> — no account needed:<pre><button class="cbtn" onclick="cp(this)">copy</button>curl -X POST https://short.smp45.qzz.io/api/v1/shorten \
   -H "Content-Type: application/json" \
-  -d '{"url":"https://github.com"}'</pre></div></div>
-<div class="step"><div class="n">2</div><div><b>Create an API key</b> (30 s): register → open <a href="#ep-auth">keys</a> → copy the <code class="i">lsk_…</code> secret once.<pre><button class="cbtn" onclick="cp(this)">copy</button>curl -H "Authorization: Bearer lsk_YOUR_SECRET" \
-  https://short.smp45.qzz.io/api/v1/auth/me</pre></div></div>
+  -d '{"url":"https://github.com"}'</pre>
+<p class="dim">Response: <code class="i">{"ok":true,"data":{"id":"ws0VTL","short_url":"https://short.smp45.qzz.io/ws0VTL","kind":"url","url":"https://github.com/","clicks":0,"enabled":true,"deduplicated":false}}</code></p></div></div>
+<div class="step"><div class="n">2</div><div><b>Register &amp; create an API key</b> — register → login → create key → copy the <code class="i">lsk_…</code> secret once:<pre><button class="cbtn" onclick="cp(this)">copy</button>curl -X POST https://short.smp45.qzz.io/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"myuser","password":"mypassword"}'
+
+curl -X POST https://short.smp45.qzz.io/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"name":"myuser","password":"mypassword"}'
+
+curl -X POST https://short.smp45.qzz.io/api/v1/keys \
+  -H "Cookie: ls_sess=YOUR_SESSION_COOKIE" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"my-key"}'</pre>
+<p class="dim">The <code class="i">secret</code> is shown only once — store it immediately.</p></div></div>
 <div class="step"><div class="n">3</div><div><b>Claim a custom alias &amp; expiry:</b><pre><button class="cbtn" onclick="cp(this)">copy</button>curl -X POST https://short.smp45.qzz.io/api/v1/shorten \
   -H "Authorization: Bearer lsk_YOUR_SECRET" \
   -H "Content-Type: application/json" \
   -d '{"url":"https://example.com/sale","alias":"black-friday","expires_in":604800}'</pre>
-<p class="dim">→ live for 7 days at <code class="i">/black-friday</code>, then it returns 410 Gone automatically.</p></div></div>
+<p class="dim">→ live for 7 days at <code class="i">/black-friday</code>, then it returns 410 Gone automatically. Auth required for custom aliases.</p></div></div>
 </section>
 
 <section class="card" id="auth">
 <h2>🔑 Authentication</h2>
 <table>
 <tr><th>Method</th><th>How</th><th>Best for</th></tr>
-<tr><td><b>Session cookie</b></td><td><code class="i">POST /api/v1/auth/login</code> sets <code class="i">ls_sess</code> (HttpOnly, 30 d). Browsers send it automatically.</td><td>The website, browser tools, playground below</td></tr>
+<tr><td><b>Session cookie</b></td><td><code class="i">POST /api/v1/auth/login</code> sets <code class="i">ls_sess</code> (HttpOnly, Secure, 30 d). Browsers send it automatically.</td><td>The website, browser tools, playground below</td></tr>
 <tr><td><b>API key</b></td><td>Header <code class="i">Authorization: Bearer lsk_…</code>. Create via <code class="i">POST /api/v1/keys</code>.</td><td>Scripts, CI, apps — never expires until revoked</td></tr>
 </table>
+<h3>Auth flow example</h3>
+<pre><button class="cbtn" onclick="cp(this)">copy</button># 1. Register
+curl -X POST https://short.smp45.qzz.io/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"myuser","password":"mypassword"}'
+# → {"ok":true,"data":{"name":"myuser"}}
+
+# 2. Login (sets ls_sess cookie)
+curl -c cookies.txt -X POST https://short.smp45.qzz.io/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"name":"myuser","password":"mypassword"}'
+# → {"ok":true,"data":{"name":"myuser"}}
+
+# 3. Use session cookie
+curl -b cookies.txt https://short.smp45.qzz.io/api/v1/auth/me
+# → {"ok":true,"data":{"name":"myuser","via":"session","created":"2026-08-28T04:54:55.915Z","links":0,"total_clicks":0}}
+
+# 4. Create API key (secret shown only once!)
+curl -b cookies.txt -X POST https://short.smp45.qzz.io/api/v1/keys \
+  -H "Content-Type: application/json" \
+  -d '{"name":"ci-key"}'
+# → {"ok":true,"data":{"id":"...","secret":"lsk_abc123...","note":"Store this secret now — it is never shown again."}}
+
+# 5. Use API key (no cookie needed)
+curl -H "Authorization: Bearer lsk_abc123..." \
+  https://short.smp45.qzz.io/api/v1/links</pre>
 <p class="dim">Anonymous requests work for shortening, bulk, public feeds and stats. Custom aliases and all management/analytics endpoints need auth.</p>
 </section>
 
@@ -155,29 +193,58 @@ td code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#
 <tr><td>Pagination</td><td>List endpoints accept <code class="i">?limit=</code> (1–200) and <code class="i">?offset=</code>, and answer with <code class="i">total</code></td></tr>
 <tr><td>Deduplication</td><td>Identical content returns the existing link (<code class="i">deduplicated:true</code>) instead of a new row</td></tr>
 <tr><td>CORS</td><td>All <code class="i">/api/*</code> endpoints allow cross-origin calls</td></tr>
+<tr><td>Short links</td><td>Visiting <code class="i">/:id</code> returns an HTML page that redirects via <code class="i">&lt;meta http-equiv="refresh"&gt;</code> (enables click tracking)</td></tr>
 </table>
+<h3>Response examples</h3>
+<pre>{"ok":true,"data":{"id":"ws0VTL","short_url":"https://short.smp45.qzz.io/ws0VTL","kind":"url","url":"https://github.com/","clicks":0,"enabled":true,"deduplicated":false}}
+
+{"ok":false,"error":{"code":"invalid_url","message":"URL required (http/https)"}}
+
+{"ok":true,"data":{"total_links":6,"total_clicks":142,"clicks_last_24h":23,"by_kind":{"url":4,"text":2},"version":"2.0.0"}}</pre>
 </section>
 
 <section class="card" id="ep-health">
 <h2>Health &amp; index</h2>
 <h3><span class="mth get">GET</span><span class="path">/api/v1/health</span><span class="pill open">public</span></h3>
-<p class="dim">Liveness + version + uptime. No auth.</p>
+<p class="dim">Liveness check + version info. No auth required.</p>
+<pre>{"ok":true,"data":{"status":"healthy","version":"2.0.0","uptime_seconds":42,"node":"v24.18.0","database":"ok","time":"2026-08-28T04:54:12.257Z"}}</pre>
 <h3><span class="mth get">GET</span><span class="path">/api/v1</span><span class="pill open">public</span></h3>
-<p class="dim">Machine-readable endpoint catalog. Full spec: <a href="/openapi.json"><code class="i">GET /openapi.json</code></a> (OpenAPI 3.1).</p>
+<p class="dim">Machine-readable endpoint catalog with all available routes. Full OpenAPI spec: <a href="/openapi.json"><code class="i">GET /openapi.json</code></a>.</p>
+<pre>{"ok":true,"data":{"name":"Shrinqo API","version":"2.0.0","endpoints":["GET    /api/v1/health","POST   /api/v1/auth/register","POST   /api/v1/auth/login",...]}}</pre>
 </section>
 
 <section class="card" id="ep-auth">
 <h2>Account &amp; keys</h2>
-<h3><span class="mth post">POST</span><span class="path">/api/v1/auth/register</span></h3>
-<p class="dim">Body <code class="i">{name, password}</code> — name: 3–20 chars letters/digits/_; password ≥ 6. Sets session cookie.</p>
-<h3><span class="mth post">POST</span><span class="path">/api/v1/auth/login</span><span class="pill auth">auth</span></h3>
-<h3><span class="mth post">POST</span><span class="path">/api/v1/auth/logout</span> · <span class="path">/api/v1/auth/logout-all</span></h3>
+<h3><span class="mth post">POST</span><span class="path">/api/v1/auth/register</span><span class="pill open">public</span></h3>
+<p class="dim">Create a new account. Body: <code class="i">{"name":"username","password":"password"}</code> — name: 3–20 chars letters/digits/_; password ≥ 6 chars.</p>
+<pre>{"ok":true,"data":{"name":"myuser"}}</pre>
+<p class="dim">Error: <code class="i">{"ok":false,"error":{"code":"username_taken","message":"Username taken"}}</code></p>
+<h3><span class="mth post">POST</span><span class="path">/api/v1/auth/login</span><span class="pill open">public</span></h3>
+<p class="dim">Authenticate and receive a session cookie. Body: <code class="i">{"name":"username","password":"password"}</code>.</p>
+<pre>{"ok":true,"data":{"name":"myuser"}}
+# Response headers: Set-Cookie: ls_sess=...; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax; Secure</pre>
+<p class="dim">Error: <code class="i">{"ok":false,"error":{"code":"invalid_credentials","message":"Invalid credentials"}}</code></p>
+<h3><span class="mth post">POST</span><span class="path">/api/v1/auth/logout</span><span class="pill auth">auth</span></h3>
+<p class="dim">End current session. Clears the <code class="i">ls_sess</code> cookie.</p>
+<pre>{"ok":true,"data":{"logged_out":true}}</pre>
+<h3><span class="mth post">POST</span><span class="path">/api/v1/auth/logout-all</span><span class="pill auth">auth</span></h3>
+<p class="dim">Revoke all sessions for this account.</p>
 <h3><span class="mth post">POST</span><span class="path">/api/v1/auth/password</span><span class="pill auth">session only</span></h3>
-<p class="dim">Body <code class="i">{current_password, new_password}</code>. Revokes other sessions.</p>
+<p class="dim">Change password. Body: <code class="i">{"current_password":"old","new_password":"new"}</code>. Revokes other sessions.</p>
+<pre>{"ok":true,"data":{"updated":true}}</pre>
+<p class="dim">Error: <code class="i">{"ok":false,"error":{"code":"wrong_password","message":"Current password incorrect"}}</code></p>
 <h3><span class="mth get">GET</span><span class="path">/api/v1/auth/me</span><span class="pill auth">auth</span></h3>
-<p class="dim">Username, created date, link count, lifetime clicks.</p>
-<h3><span class="mth get">GET</span><span class="path">/api/v1/keys</span> · <span class="mth post">POST</span><span class="path">/api/v1/keys</span> · <span class="mth del">DELETE</span><span class="path">/api/v1/keys/:id</span><span class="pill auth">auth</span></h3>
-<p class="dim">The create response contains <code class="i">secret</code> exactly once — store it immediately.</p>
+<p class="dim">Current user info: username, creation date, link count, lifetime clicks.</p>
+<pre>{"ok":true,"data":{"name":"myuser","via":"session","created":"2026-08-28T04:54:55.915Z","links":4,"total_clicks":142}}</pre>
+<h3><span class="mth get">GET</span><span class="path">/api/v1/keys</span><span class="pill auth">auth</span></h3>
+<p class="dim">List all API keys for this account. Secrets are never returned — only the prefix and metadata.</p>
+<pre>{"ok":true,"data":[{"id":"db3e40daf6afd8b8","name":"ci-key","prefix":"lsk_ae9d3d3a","created":"2026-08-28T04:56:17.959Z","last_used":"2026-08-28T04:58:00.000Z"}]}</pre>
+<h3><span class="mth post">POST</span><span class="path">/api/v1/keys</span><span class="pill auth">auth</span></h3>
+<p class="dim">Create a new API key. Body: <code class="i">{"name":"optional-label"}</code>. The <code class="i">secret</code> is returned exactly once — store it immediately.</p>
+<pre>{"ok":true,"data":{"id":"db3e40daf6afd8b8","name":"ci-key","secret":"lsk_ae9d3d3abfb9cc547ec0a706d7c814057685cf7a","note":"Store this secret now — it is never shown again. Use as: Authorization: Bearer lsk_ae9d3d3a..."}}</pre>
+<h3><span class="mth del">DELETE</span><span class="path">/api/v1/keys/:id</span><span class="pill auth">auth</span></h3>
+<p class="dim">Revoke an API key. All future requests with that key will fail with 401.</p>
+<pre>{"ok":true,"data":{"revoked":"db3e40daf6afd8b8"}}</pre>
 </section>
 
 <section class="card" id="ep-create">
@@ -185,68 +252,140 @@ td code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#
 <h3><span class="mth post">POST</span><span class="path">/api/v1/shorten</span><span class="pill open">anon ok</span></h3>
 <table>
 <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
-<tr><td><code>url</code> or <code>text</code></td><td>string</td><td>URL (http/s) or paste up to 100 k chars — one required</td></tr>
-<tr><td><code>alias</code></td><td>string</td><td><b>auth required.</b> 1–32 chars <code>a-z A-Z 0-9 _ -</code>, no reserved words</td></tr>
-<tr><td><code>expires_in</code></td><td>seconds</td><td>optional, max 31 536 000 (1 year) → link serves 410 after</td></tr>
-<tr><td><code>name</code></td><td>string</td><td>optional label</td></tr>
+<tr><td><code>url</code></td><td>string</td><td>URL to shorten (must be http/https). One of <code>url</code> or <code>text</code> required.</td></tr>
+<tr><td><code>text</code></td><td>string</td><td>Plain text paste (up to 100k chars). One of <code>url</code> or <code>text</code> required.</td></tr>
+<tr><td><code>alias</code></td><td>string</td><td><b>Auth required.</b> Custom short code: 1–32 chars <code>a-z A-Z 0-9 _ -</code>. No reserved words.</td></tr>
+<tr><td><code>expires_in</code></td><td>number</td><td>Seconds until expiry (max 31536000 = 1 year). Link serves 410 after.</td></tr>
+<tr><td><code>name</code></td><td>string</td><td>Optional label for your reference.</td></tr>
+<tr><td><code>type</code></td><td>string</td><td><code>"url"</code> or <code>"paste"</code> — auto-detected from <code>url</code>/<code>text</code> field.</td></tr>
 </table>
+<pre><button class="cbtn" onclick="cp(this)">copy</button># Shorten a URL (anonymous)
+curl -X POST https://short.smp45.qzz.io/api/v1/shorten \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://github.com"}'
+# → {"ok":true,"data":{"id":"ws0VTL","short_url":"https://short.smp45.qzz.io/ws0VTL","kind":"url","url":"https://github.com/","clicks":0,"enabled":true,"deduplicated":false}}
+
+# Create a text paste
+curl -X POST https://short.smp45.qzz.io/api/v1/shorten \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Hello world!","name":"greeting"}'
+# → {"ok":true,"data":{"id":"T4f6t6","short_url":"https://short.smp45.qzz.io/T4f6t6","kind":"text",...}}
+
+# Custom alias + 7-day expiry (auth required)
+curl -X POST https://short.smp45.qzz.io/api/v1/shorten \
+  -H "Authorization: Bearer lsk_YOUR_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com/sale","alias":"black-friday","expires_in":604800}'
+# → {"ok":true,"data":{"id":"nZ8z5H","short_url":"https://short.smp45.qzz.io/black-friday",...}}
+
+# Duplicate URL returns existing link (deduplication)
+curl -X POST https://short.smp45.qzz.io/api/v1/shorten \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://github.com"}'
+# → {"ok":true,"data":{"id":"ws0VTL","deduplicated":true,...}}</pre>
 <h3><span class="mth post">POST</span><span class="path">/api/v1/shorten/bulk</span><span class="pill open">anon ok</span></h3>
-<p class="dim">Body <code class="i">{links:[{url}|{text}, …]}</code> — up to 25 items; per-item success/error results.</p>
+<p class="dim">Bulk create up to 25 links at once. Body: <code class="i">{"links":[{"url":"..."},{"text":"..."},...]}</code>. Each item can have <code>url</code>/<code>text</code>, optional <code>alias</code>, <code>expires_in</code>, <code>name</code>.</p>
+<pre>{"ok":true,"data":{"processed":3,"succeeded":3,"results":[{"index":0,"ok":true,"id":"lr1N9p","short_url":"https://short.smp45.qzz.io/lr1N9p","created":true},{"index":1,"ok":true,"id":"oFba9g","short_url":"https://short.smp45.qzz.io/oFba9g","created":true}]}}</pre>
+<p class="dim">Error: <code class="i">{"ok":false,"error":{"code":"empty","message":"Provide links:[{url}|{text},...]"}}</code></p>
 <h3><span class="mth post">POST</span><span class="path">/api/v1/files</span><span class="pill open">anon ok</span></h3>
-<p class="dim">Raw bytes as body, <code class="i">X-File-Name</code> header, ≤ 100 MB. Chunked to GitHub storage; served back at <code class="i">/:id/dl</code>.</p>
+<p class="dim">Upload a file. Send raw bytes as body, set <code class="i">X-File-Name</code> header. Max 25 MB anonymous / 100 MB authenticated. Requires GitHub storage configuration on server.</p>
+<pre>{"ok":true,"data":{"id":"fH7k2m","short_url":"https://short.smp45.qzz.io/fH7k2m","kind":"file","name":"document.pdf","type":"application/pdf","size":1048576,...}}</pre>
+<p class="dim">If file storage is not configured: <code class="i">{"ok":false,"error":{"code":"storage_unavailable","message":"File storage not configured"}}</code></p>
 </section>
 <section class="card" id="ep-manage">
 <h2>Manage links</h2>
 <h3><span class="mth get">GET</span><span class="path">/api/v1/links</span><span class="pill auth">auth</span></h3>
 <p class="dim">Your links. Query: <code class="i">?kind=url|text|file</code>, <code class="i">?q=search</code> (matches url/text/name/id), <code class="i">?limit=</code>, <code class="i">?offset=</code>.</p>
+<pre>{"ok":true,"data":{"total":4,"limit":50,"offset":0,"count":4,"links":[{"id":"ws0VTL","short_url":"https://short.smp45.qzz.io/ws0VTL","kind":"url","url":"https://github.com/","clicks":0,"enabled":true,"expires_at":null,"banner_url":"https://...","created":"2026-08-28T04:55:46.315Z"}]}}</pre>
 <h3><span class="mth get">GET</span><span class="path">/api/v1/links/public</span><span class="pill open">public</span></h3>
-<p class="dim">Recent public feed with pagination.</p>
-<h3><span class="mth get">GET</span><span class="path">/api/v1/links/:id</span><span class="pill open">public+</span></h3>
-<p class="dim">Public view hides private fields; owners additionally get <code class="i">enabled</code>, <code class="i">expires_at</code> and full paste text.</p>
+<p class="dim">Recent public feed with pagination. No auth required.</p>
+<pre>{"ok":true,"data":{"total":6,"limit":25,"offset":0,"count":6,"links":[{"id":"sHPbxZ","short_url":"https://short.smp45.qzz.io/sHPbxZ","kind":"text","clicks":0,"created":"2026-08-28T04:56:41.140Z","name":null,"url":null,"preview":null}]}}</pre>
+<h3><span class="mth get">GET</span><span class="path">/api/v1/links/:id</span><span class="pill open">public</span></h3>
+<p class="dim">Public view hides private fields; owners additionally get <code class="i">enabled</code>, <code class="i">expires_at</code>, <code class="i">you_own</code>, and full paste text.</p>
+<pre>{"ok":true,"data":{"id":"ws0VTL","short_url":"https://short.smp45.qzz.io/ws0VTL","kind":"url","clicks":0,"created":"2026-08-28T04:55:46.315Z","url":"https://github.com/","preview":null,"name":null,"banner_url":"https://...","expired":false,"enabled":true,"expires_at":null,"you_own":true}}</pre>
 <h3><span class="mth patch">PATCH</span><span class="path">/api/v1/links/:id</span><span class="pill auth">owner</span></h3>
-<p class="dim">Any of: <code class="i">{url}</code>, <code class="i">{text}</code>, <code class="i">{name}</code>, <code class="i">{enabled:true|false}</code>, <code class="i">{expires_in:seconds|null}</code>. Response lists changed fields.</p>
+<p class="dim">Update any of: <code class="i">{"url"}</code>, <code class="i">{"text"}</code>, <code class="i">{"name"}</code>, <code class="i">{"enabled":true|false}</code>, <code class="i">{"expires_in":seconds|null}</code>. Response lists changed fields.</p>
+<pre># Update URL
+curl -X PATCH https://short.smp45.qzz.io/api/v1/links/ws0VTL \
+  -H "Cookie: ls_sess=YOUR_SESSION" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://github.com/new-target"}'
+# → {"ok":true,"data":{"id":"ws0VTL","url":"https://github.com/new-target",...,"changed":["url"]}}
+
+# Disable link
+curl -X PATCH https://short.smp45.qzz.io/api/v1/links/ws0VTL \
+  -H "Cookie: ls_sess=YOUR_SESSION" \
+  -d '{"enabled":false}'
+
+# Remove expiry (make permanent)
+curl -X PATCH https://short.smp45.qzz.io/api/v1/links/ws0VTL \
+  -H "Cookie: ls_sess=YOUR_SESSION" \
+  -d '{"expires_in":null}'</pre>
 <h3><span class="mth del">DELETE</span><span class="path">/api/v1/links/:id</span><span class="pill auth">owner</span></h3>
 <p class="dim">Removes the link and its dedup entries — the same content can be shortened again afterwards.</p>
+<pre>{"ok":true,"data":{"deleted":"ws0VTL"}}</pre>
 </section>
 
 <section class="card" id="ep-stats">
 <h2>Analytics</h2>
 <h3><span class="mth get">GET</span><span class="path">/api/v1/links/:id/stats?days=7</span><span class="pill auth">owner</span></h3>
+<p class="dim">Click analytics for a single link. <code class="i">days</code> param: 1–90 (default: 7).</p>
+<pre>{"ok":true,"data":{"id":"ws0VTL","total_clicks":142,"tracked_clicks":89,"period_days":7,"by_day":[{"d":"2026-08-21","c":14},{"d":"2026-08-22","c":23},{"d":"2026-08-23","c":18}],"top_referrers":[{"r":"twitter.com","c":42},{"r":"direct","c":31},{"r":"github.com","c":16}],"recent":[{"ts":"2026-08-28T04:55:46.315Z","ref":"twitter.com","bot":false},{"ts":"2026-08-28T04:54:12.257Z","ref":"direct","bot":false}]}}</pre>
 <table>
 <tr><th>Field</th><th>Meaning</th></tr>
-<tr><td><code>by_day</code></td><td><code>[{d:"2026-08-23",c:14},…]</code> daily clicks for the period (1–90 days)</td></tr>
-<tr><td><code>top_referrers</code></td><td>top 10 referring hostnames (+ direct)</td></tr>
-<tr><td><code>recent</code></td><td>last 50 hits: timestamp, referrer, bot flag</td></tr>
-<tr><td><code>tracked_clicks</code></td><td>rows kept in the analytics window (total_clicks is lifetime)</td></tr>
+<tr><td><code>total_clicks</code></td><td>Lifetime clicks (all time)</td></tr>
+<tr><td><code>tracked_clicks</code></td><td>Clicks within the analytics window (by_day, recent, referrers)</td></tr>
+<tr><td><code>by_day</code></td><td>Daily click counts: <code>[{"d":"2026-08-23","c":14},…]</code></td></tr>
+<tr><td><code>top_referrers</code></td><td>Top 10 referring hostnames + "direct" for no-referrer hits</td></tr>
+<tr><td><code>recent</code></td><td>Last 50 hits: timestamp, referrer, bot flag</td></tr>
 </table>
 <h3><span class="mth get">GET</span><span class="path">/api/v1/stats</span><span class="pill open">public</span></h3>
-<p class="dim">Platform totals: links, lifetime clicks, last-24 h clicks, per-kind counts.</p>
+<p class="dim">Platform-wide totals. No auth required.</p>
+<pre>{"ok":true,"data":{"total_links":6,"total_clicks":142,"clicks_last_24h":23,"by_kind":{"url":4,"text":2},"version":"2.0.0"}}</pre>
 <h3><span class="mth get">GET</span><span class="path">/api/v1/preview?url=…</span><span class="pill open">public</span></h3>
-<p class="dim">OpenGraph scrape of any URL (title/description/image) — the engine that powers link previews. 10/min.</p>
+<p class="dim">OpenGraph scrape of any URL (title/description/image) — powers link previews. Rate limit: 10/min.</p>
+<pre>{"ok":true,"data":{"url":"https://github.com/","found":true,"title":"GitHub · Change is constant.","description":"Join the world's most widely adopted, AI-powered developer platform...","image":"https://images.ctfassets.net/..."}}</pre>
+<p class="dim">Error: <code class="i">{"ok":false,"error":{"code":"invalid_url","message":"URL required"}}</code></p>
 </section>
 
 <section class="card" id="errors">
 <h2>Errors &amp; rate limits</h2>
+<h3>Error format</h3>
+<p class="dim">All errors follow: <code class="i">{"ok":false,"error":{"code":"error_code","message":"Human-readable description"}}</code></p>
 <table>
 <tr><th>Status</th><th>code</th><th>When</th></tr>
-<tr><td>400</td><td>invalid_url · empty_text · invalid_alias …</td><td>bad input; private-network URLs are rejected</td></tr>
-<tr><td>401</td><td>unauthorized / auth_required</td><td>no or bad session/key</td></tr>
-<tr><td>403</td><td>wrong_password</td><td>password change mismatch</td></tr>
-<tr><td>404</td><td>not_found / unknown_endpoint</td><td>missing resource</td></tr>
-<tr><td>409</td><td>alias_taken · alias_reserved · username_taken</td><td>conflicts</td></tr>
-<tr><td>410</td><td>—</td><td>link expired or disabled (redirect route serves an HTML page)</td></tr>
-<tr><td>429</td><td>rate_limited</td><td>see headers for budget &amp; reset</td></tr>
-<tr><td>502/503</td><td>upload_failed / storage_unavailable</td><td>file storage issues</td></tr>
+<tr><td>400</td><td><code>invalid_url</code></td><td>Missing or malformed URL (must be http/https)</td></tr>
+<tr><td>400</td><td><code>empty_text</code></td><td>Empty text paste</td></tr>
+<tr><td>400</td><td><code>empty_body</code></td><td>Missing request body</td></tr>
+<tr><td>400</td><td><code>invalid_alias</code></td><td>Alias contains invalid characters or is too long</td></tr>
+<tr><td>400</td><td><code>invalid_expiry</code></td><td>Expiry exceeds 1 year max</td></tr>
+<tr><td>400</td><td><code>empty</code></td><td>Bulk request with no items</td></tr>
+<tr><td>401</td><td><code>unauthorized</code></td><td>No session cookie or API key provided</td></tr>
+<tr><td>401</td><td><code>invalid_credentials</code></td><td>Wrong username or password</td></tr>
+<tr><td>401</td><td><code>auth_required</code></td><td>Endpoint requires authentication</td></tr>
+<tr><td>403</td><td><code>wrong_password</code></td><td>Current password mismatch on password change</td></tr>
+<tr><td>404</td><td><code>not_found</code></td><td>Link or resource does not exist</td></tr>
+<tr><td>404</td><td><code>unknown_endpoint</code></td><td>Route does not exist</td></tr>
+<tr><td>409</td><td><code>alias_taken</code></td><td>Custom alias already in use</td></tr>
+<tr><td>409</td><td><code>alias_reserved</code></td><td>Alias is a reserved word</td></tr>
+<tr><td>409</td><td><code>username_taken</code></td><td>Registration username already exists</td></tr>
+<tr><td>410</td><td>—</td><td>Link expired or disabled (redirect route serves an HTML page)</td></tr>
+<tr><td>413</td><td><code>too_large</code></td><td>File exceeds size limit (25 MB anon / 100 MB auth)</td></tr>
+<tr><td>429</td><td><code>rate_limited</code></td><td>Too many requests — check <code>X-RateLimit-*</code> headers</td></tr>
+<tr><td>502</td><td><code>upload_failed</code></td><td>File storage write failed (GitHub API error)</td></tr>
+<tr><td>503</td><td><code>storage_unavailable</code></td><td>File storage not configured on server</td></tr>
 </table>
+<h3>Rate limits</h3>
 <table>
-<tr><th>Scope</th><th>Budget</th></tr>
-<tr><td>Create link (v1)</td><td>30 / min per IP</td></tr>
-<tr><td>Bulk</td><td>3 calls / min</td></tr>
-<tr><td>File upload</td><td>6 / min</td></tr>
-<tr><td>Preview</td><td>10 / min</td></tr>
-<tr><td>Login/register</td><td>8 / min</td></tr>
-<tr><td>Redirect hits</td><td>120 / min</td></tr>
+<tr><th>Endpoint</th><th>Budget</th></tr>
+<tr><td>Create link (POST /shorten)</td><td>30 / min per IP</td></tr>
+<tr><td>Bulk create (POST /shorten/bulk)</td><td>3 calls / min</td></tr>
+<tr><td>File upload (POST /files)</td><td>6 / min</td></tr>
+<tr><td>Preview (GET /preview)</td><td>10 / min</td></tr>
+<tr><td>Login / register</td><td>8 / min</td></tr>
+<tr><td>Redirect hits (GET /:id)</td><td>120 / min</td></tr>
 </table>
+<p class="dim">Rate limit headers: <code class="i">X-RateLimit-Limit</code>, <code class="i">X-RateLimit-Remaining</code>, <code class="i">X-RateLimit-Reset</code> (Unix timestamp).</p>
 </section>
 
 <section class="card" id="playground">
