@@ -799,12 +799,10 @@ async function fetchAndStoreBanner(id, targetUrl) {
       var imgUrl = meta.image;
       // Resolve relative URLs
       try { imgUrl = new URL(imgUrl, targetUrl).href; } catch(e) {}
-      // SSRF guard: reject banner URLs pointing to private/internal IPs
+      // Basic SSRF guard: reject obvious private/internal hostnames only
       var imgUrlParsed;
       try { imgUrlParsed = new URL(imgUrl); } catch(e) { return; }
       if (isPrivateHost(imgUrlParsed.hostname)) return;
-      var bannerPrivate = await isPrivateResolvedTarget(imgUrlParsed.hostname).catch(function() { return true; });
-      if (bannerPrivate) return;
       S.setBanner.run(imgUrl, new Date().toISOString(), id);
     }
   } catch(e) {}
