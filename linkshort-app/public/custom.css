@@ -282,3 +282,6 @@ a.fake-ad:hover .fake-ad-card{background:var(--accent-soft);border-color:rgba(37
 
 /* Reduced motion: kill the new ones too */
 @media(prefers-reduced-motion:reduce){.btn-primary::before,.tool-step-arrow,.hero-title .grad{animation:none!important}}
+
+/* Hide Netlify HUD badge */
+#nl-badge-frame,#nl-hud-frame{display:none!important}
