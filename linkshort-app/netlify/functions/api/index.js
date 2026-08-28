@@ -1,112 +1,67 @@
 // Netlify Function adapter for Shrinqo.
 //
-// Reuses the exact same request handler as the standalone server (server.js),
-// but shims the Netlify event/context into Node-style http req/res objects so
-// the ~450-line router needs no rewriting.
-//
-// NOTE: Netlify Functions are serverless/ephemeral. The SQLite DB lives under
-// /tmp (configurable via DB_PATH) and is NOT durable across cold starts. This
-// is fine for testing; see linkshort-app/README or netlify.toml comments.
+// Uses Turso embedded replicas for persistence: syncs a local SQLite file to/from
+// Turso, then the main server.js queries the LOCAL file (sync, zero changes to
+// existing DB call sites).
 'use strict';
-
 const path = require('path');
 const fs = require('fs');
 
-// Force a temp/durable writable location for the SQLite DB inside the function
-// sandbox. Netlify gives a writable /tmp. DB_PATH in server.js defaults to
-// __dirname which is read-only inside the bundle, so we must redirect it.
-// IMPORTANT: this MUST happen BEFORE requiring server.js, which reads DB_PATH
-// at module load time.
-if (!process.env.DB_PATH) {
-  process.env.DB_PATH = path.join('/tmp', 'shrinqo');
-}
-try { fs.mkdirSync(process.env.DB_PATH, { recursive: true }); } catch (e) { /* ignore */ }
+// Turso sync must happen BEFORE server.js opens the DB.
+const turso = require('./_server/turso-sync');
 
-// The build script (netlify/build-functions.sh) copies server.js + public/ into
-// this bundle dir so Netlify ships a self-contained function. server.js reads
-// its static files relative to __dirname, so public must sit beside it.
-const { handleRequest } = require('./_server/server.js');
+exports.handler = async (event, context) => {
+  // On first invocation (cold start): sync DB from Turso → /tmp/shrinqo.db
+  if (!turso.tursoSynced) {
+    await turso.syncDown();
+  }
 
-// Capture the response written by the handler into a Netlify-compatible shape.
-function makeRes() {
-  const captured = {
-    statusCode: 200,
-    headers: {},
-    body: Buffer.alloc(0),
-  };
-  return {
-    _captured: captured,
-    writeHead(statusCode, headers) {
-      captured.statusCode = statusCode;
-      if (headers) Object.assign(captured.headers, headers);
-      return this;
-    },
-    setHeader(name, value) { captured.headers[name.toLowerCase()] = value; return this; },
-    write(chunk) {
-      captured.body = Buffer.concat([captured.body, Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk))]);
-      return true;
-    },
-    end(chunk) {
-      if (chunk !== undefined) this.write(chunk);
-      return this;
-    },
-    destroy() {},
-  };
-}
+  // Only load server.js + handleRequest AFTER the first sync completes.
+  // This ensures the local SQLite file is populated from Turso before opening.
+  if (!global.__shrinqo_loaded) {
+    // DB_PATH must be set so server.js opens the synced Turso file.
+    if (!process.env.DB_PATH) {
+      process.env.DB_PATH = '/tmp';
+    }
+    try { fs.mkdirSync(process.env.DB_PATH, { recursive: true }); } catch (e) {}
 
-// Build a Node-style IncomingMessage the handler (and helpers) expect.
-function makeReq(event) {
-  const {
-    httpMethod: method,
-    path: p,
-    pathname,
-    queryStringParameters,
-    multiValueQueryStringParameters,
-    headers,
-    body,
-    isBase64Encoded,
-  } = event;
+    // Require server.js (which opens the local SQLite at /tmp/shrinqo.db)
+    require('./_server/server.js');
+    global.__shrinqo_loaded = true;
+  }
 
-  // Rebuild the raw request URL (path + query) the way Node's req.url looks.
+  const { handleRequest } = require('./_server/server.js');
+
+  const { httpMethod, path: p, pathname, queryStringParameters, headers, body, isBase64Encoded } = event;
+
+  // Build query string
   const params = new URLSearchParams();
   if (queryStringParameters) {
     for (const k of Object.keys(queryStringParameters)) {
       const v = queryStringParameters[k];
-      if (Array.isArray(v)) v.forEach((x) => params.append(k, x));
+      if (Array.isArray(v)) v.forEach(x => params.append(k, x));
       else params.append(k, v == null ? '' : v);
-    }
-  }
-  if (multiValueQueryStringParameters) {
-    for (const k of Object.keys(multiValueQueryStringParameters)) {
-      multiValueQueryStringParameters[k].forEach((x) => params.append(k, x));
     }
   }
   const qs = params.toString();
   const url = (p || pathname || '/') + (qs ? '?' + qs : '');
 
+  // Lowercase headers
   const reqHeaders = {};
-  for (const k of Object.keys(headers || {})) {
-    reqHeaders[k.toLowerCase()] = headers[k];
-  }
-  // Netlify passes the host separately; make it available like Node does.
-  if (reqHeaders['host'] === undefined && event.headers && event.headers.host) {
-    reqHeaders['host'] = event.headers.host;
-  }
+  for (const k of Object.keys(headers || {})) reqHeaders[k.toLowerCase()] = headers[k];
 
+  // Body
   let rawBody = Buffer.alloc(0);
   if (body) {
     try {
-      rawBody = isBase64Encoded
-        ? Buffer.from(body, 'base64')
-        : Buffer.from(body, 'utf8');
+      rawBody = isBase64Encoded ? Buffer.from(body, 'base64') : Buffer.from(body, 'utf8');
       reqHeaders['content-length'] = String(rawBody.length);
-    } catch (e) { /* ignore malformed body */ }
+    } catch (e) {}
   }
 
+  // Shim req
   const req = {
-    url,
-    method,
-    headers: reqHeaders,
+    url, method: httpMethod, headers: reqHeaders,
     socket: { remoteAddress: (reqHeaders['x-nf-client-connection-ip'] || (reqHeaders['x-forwarded-for'] || '').split(',')[0].trim() || '0.0.0.0') },
     _emitters: new Map(),
     on(evt, cb) { this._emitters.set(evt, cb); return this; },
@@ -115,49 +70,33 @@ function makeReq(event) {
     __emit(evt, arg) { const cb = this._emitters.get(evt); if (cb) cb(arg); },
     removeListener(evt) { this._emitters.delete(evt); return this; },
   };
-
-  // Deliver the body synchronously to the handler's Promise-based reader.
   process.nextTick(() => {
     if (rawBody.length) req.__emit('data', rawBody);
     req.__emit('end');
   });
 
-  return req;
-}
+  // Shim res
+  const captured = { statusCode: 200, headers: {}, body: Buffer.alloc(0) };
+  const res = {
+    writeHead(code, hdrs) { captured.statusCode = code; if (hdrs) Object.assign(captured.headers, hdrs); return this; },
+    setHeader(n, v) { captured.headers[n.toLowerCase()] = v; return this; },
+    write(chunk) { captured.body = Buffer.concat([captured.body, Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk))]); return true; },
+    end(chunk) { if (chunk !== undefined) this.write(chunk); return this; },
+    destroy() {},
+  };
 
-exports.handler = async (event, context) => {
-  // Netlify may suffix the function path; the handler parses pathname from url.
-  const req = makeReq(event);
-  const res = makeRes();
-
-  // The handler is async; it may or may not return before res.end writes.
   await handleRequest(req, res);
 
-  const { statusCode, headers } = res._captured;
-  let responseBody = res._captured.body;
+  // Push local changes back to Turso (fire-and-forget)
+  turso.syncUp().catch(() => {});
+
+  const { statusCode, headers: resHeaders } = captured;
+  let responseBody = captured.body;
   let isBase64 = false;
+  const ct = String(resHeaders['content-type'] || '');
+  const isBinary = /^image\//i.test(ct) || /^video\//i.test(ct) || /^audio\//i.test(ct) || /octet-stream/i.test(ct) || /application\/zip/i.test(ct) || /application\/pdf/i.test(ct) || /application\/vnd/i.test(ct);
+  if (isBinary) { isBase64 = true; responseBody = responseBody.toString('base64'); }
+  else { responseBody = responseBody.toString('utf8'); }
 
-  const ct = String(headers['content-type'] || '');
-  const isBinary =
-    /^image\//i.test(ct) ||
-    /^video\//i.test(ct) ||
-    /^audio\//i.test(ct) ||
-    /octet-stream/i.test(ct) ||
-    /application\/zip/i.test(ct) ||
-    /application\/pdf/i.test(ct) ||
-    /application\/vnd/i.test(ct);
-
-  if (isBinary) {
-    isBase64 = true;
-    responseBody = responseBody.toString('base64');
-  } else {
-    responseBody = responseBody.toString('utf8');
-  }
-
-  return {
-    statusCode,
-    headers,
-    body: responseBody,
-    isBase64Encoded: isBase64,
-  };
+  return { statusCode, headers: resHeaders, body: responseBody, isBase64Encoded: isBase64 };
 };

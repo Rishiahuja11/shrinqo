@@ -21,6 +21,9 @@ try { DatabaseSync = require('node:sqlite').DatabaseSync; } catch(e) {}
 let BetterSqlite3;
 try { BetterSqlite3 = require('better-sqlite3'); } catch(e) {}
 
+const TURSO_URL = process.env.TURSO_DATABASE_URL || '';
+const TURSO_TOKEN = process.env.TURSO_AUTH_TOKEN || '';
+
 const PORT = parseInt(process.env.PORT) || 7860;
 let SITE_URL = process.env.SITE_URL || 'https://short.smp45.qzz.io';
 const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
