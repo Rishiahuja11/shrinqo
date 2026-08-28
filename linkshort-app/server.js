@@ -536,24 +536,24 @@ function gonePage(reason) {
 }
 
 // ---- URL interstitial: 3 steps x 15s, ad-funded (the money page) ----
-function stepsPage(link) {
+function stepsPage(link, meta) {
   var dest = String(link.url || '');
   var host = '';
   try { host = new URL(dest).hostname.replace(/^www\./, ''); } catch (e) {}
   var letter = (host || 'u').charAt(0).toUpperCase();
-  var dataJs = 'var T=' + safeJson(dest) + ',H=' + safeJson(host || 'destination') + ';';
-  // Banner: show if fetched within last 10 minutes
+  // Use site title from metadata if available, otherwise fall back to hostname
+  var siteName = (meta && (meta.ogTitle || meta.title)) || host || 'destination';
+  // Truncate long titles
+  if (siteName.length > 40) siteName = siteName.slice(0, 37) + '...';
+  var dataJs = 'var T=' + safeJson(dest) + ',H=' + safeJson(siteName) + ';';
+  // Banner: prefer stored banner_url, fall back to meta.image
+  var bannerSrc = link.banner_url || (meta && meta.image) || null;
   var bannerHtml = '';
-  if (link.banner_url && link.banner_fetched_at) {
-    try {
-      var fetched = new Date(link.banner_fetched_at).getTime();
-      if (Date.now() - fetched < 600000) { // 10 minutes
-        bannerHtml = '<div style="margin:-34px -24px 20px;border-radius:24px 24px 0 0;overflow:hidden;max-height:220px;position:relative">'
-          + '<img src="' + escapeHtml(link.banner_url) + '" alt="" style="width:100%;height:220px;object-fit:cover;display:block" onerror="this.parentElement.style.display=\'none\'">'
-          + '<div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,rgba(255,255,255,.92))"></div>'
-          + '</div>';
-      }
-    } catch(e) {}
+  if (bannerSrc) {
+    bannerHtml = '<div style="margin:-34px -24px 20px;border-radius:24px 24px 0 0;overflow:hidden;max-height:220px;position:relative">'
+      + '<img src="' + escapeHtml(bannerSrc) + '" alt="" style="width:100%;height:220px;object-fit:cover;display:block" onerror="this.parentElement.style.display=\'none\'">'
+      + '<div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,rgba(255,255,255,.92))"></div>'
+      + '</div>';
   }
   return '<!DOCTYPE html><html lang="en"><head>' + subHead('Redirecting \u2014 Shrinqo', '<meta name="robots" content="noindex, nofollow"><meta property="og:title" content="You are being redirected \u2014 Shrinqo"><meta property="og:description" content="Opens ' + escapeHtml(host || dest.slice(0, 80)) + ' \u2014 shared via Shrinqo"><meta property="og:image" content="' + SITE_URL + '/og-image.png">')
     + '</head><body>' + subHeader()
@@ -1760,7 +1760,8 @@ async function handleRequest(req, res) {
         return sendHtml(res, 200, crawlerPage(link, meta));
       }
       recordClick(id, req);
-      return sendHtml(res, 200, stepsPage(link));
+      var meta = await getUrlMeta(id, link.url);
+      return sendHtml(res, 200, stepsPage(link, meta));
     }
 
     // File download: /:id/dl
