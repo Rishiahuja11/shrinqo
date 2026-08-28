@@ -26,8 +26,10 @@ const TURSO_TOKEN = process.env.TURSO_AUTH_TOKEN || '';
 
 const PORT = parseInt(process.env.PORT) || 7860;
 let SITE_URL = process.env.SITE_URL || 'https://short.smp45.qzz.io';
+var siteUrlDetected = !!process.env.SITE_URL;
 const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const MAX_FILE = 104857600;
+const MAX_API_BODY = 1048576; // 1MB for JSON API payloads
 const FILE_CHUNK = 8388608;
 const SESSION_TTL = 60 * 60 * 24 * 30;
 
@@ -206,7 +208,12 @@ const S = {
 function genId() {
   const r = crypto.randomBytes(8);
   let id = '';
-  for (let i = 0; i < 6; i++) id += ALPHABET[r[i] % 62];
+  for (let i = 0; i < 6; i++) {
+    // Rejection sampling to avoid modulo bias (256 % 62 = 8, so skip values >= 248)
+    var v = r[i];
+    while (v >= 248) v = crypto.randomBytes(1)[0];
+    id += ALPHABET[v % 62];
+  }
   return id;
 }
 
@@ -219,12 +226,14 @@ function escapeHtml(s) {
 function safeJson(v) {
   return JSON.stringify(v)
     .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/<\//g, '<\\/')
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029');
 }
 
 function isCrawler(ua) {
-  return /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Googlebot|Bingbot|Pinterest|curl|wget|python/i.test(ua || '');
+  return /facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|Googlebot|Bingbot|Pinterest/i.test(ua || '');
 }
 
 function sha1(str) { return crypto.createHash('sha1').update(str).digest('hex'); }
@@ -257,6 +266,12 @@ function parseCookies(raw) {
 function rateLimit(ip, scope, max, windowMs) {
   const key = 'rl:' + ip + ':' + scope;
   S.cleanRL.run(key, Date.now() - windowMs);
+  // Periodically purge stale entries from all keys (once per ~60s)
+  var now = Date.now();
+  if (!rateLimit._lastPurge || now - rateLimit._lastPurge > 60000) {
+    rateLimit._lastPurge = now;
+    try { db.prepare("DELETE FROM rate_limits WHERE ts < ?").run(now - 3600000); } catch(e) {}
+  }
   const row = S.countRL.get(key, Date.now() - windowMs);
   if (row.c >= max) {
     return { ok: false, remaining: 0, reset: Math.ceil(windowMs / 1000) };
@@ -264,6 +279,7 @@ function rateLimit(ip, scope, max, windowMs) {
   S.insRL.run(key, Date.now());
   return { ok: true, remaining: max - row.c - 1, reset: Math.ceil(windowMs / 1000) };
 }
+rateLimit._lastPurge = 0;
 
 function rateOk(ip, scope, max, windowMs) { return rateLimit(ip, scope, max, windowMs).ok; }
 
@@ -348,12 +364,17 @@ const SEC = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'SAMEORIGIN',
   'Referrer-Policy': 'no-referrer',
-  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 };
+const SEC_HTTPS = {
+  ...SEC,
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+};
+const CSP = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://quge5.com https://nap5k.com https://al5sm.com https://fonts.googleapis.com https://app.netlify.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://quge5.com https://nap5k.com https://al5sm.com https://app.netlify.com; frame-src https://app.netlify.com";
 
 function send(res, code, body, headers) {
-  res.writeHead(code, { ...SEC, ...headers });
+  var hdrs = { ...(res._secure ? SEC_HTTPS : SEC), ...(headers || {}) };
+  res.writeHead(code, hdrs);
   res.end(body);
 }
 function sendJson(res, code, obj) { send(res, code, JSON.stringify(obj), {'Content-Type':'application/json; charset=utf-8'}); }
@@ -371,7 +392,7 @@ function sendErr(res, code, errCode, msg, extra) {
     ...(extra || {})
   });
 }
-function sendHtml(res, code, h) { send(res, code, h, {'Content-Type':'text/html; charset=utf-8'}); }
+function sendHtml(res, code, h) { send(res, code, h, {'Content-Type':'text/html; charset=utf-8', 'Content-Security-Policy': CSP}); }
 function sendRedirect(res, url) { send(res, 302, '', {'Location': url, 'Cache-Control': 'no-store'}); }
 
 async function ghFetch(pathname, options) {
@@ -799,10 +820,12 @@ async function fetchAndStoreBanner(id, targetUrl) {
       var imgUrl = meta.image;
       // Resolve relative URLs
       try { imgUrl = new URL(imgUrl, targetUrl).href; } catch(e) {}
-      // Basic SSRF guard: reject obvious private/internal hostnames only
+      // SSRF guard: reject obvious private/internal hostnames + DNS resolution
       var imgUrlParsed;
       try { imgUrlParsed = new URL(imgUrl); } catch(e) { return; }
       if (isPrivateHost(imgUrlParsed.hostname)) return;
+      var resolved = await isPrivateResolvedTarget(imgUrlParsed.hostname);
+      if (resolved) return;
       S.setBanner.run(imgUrl, new Date().toISOString(), id);
     }
   } catch(e) {}
@@ -1622,13 +1645,18 @@ async function handleRequest(req, res) {
     const ip = req.socket.remoteAddress || '0.0.0.0';
     const method = req.method;
 
+    // Mark whether the request arrived over HTTPS (for HSTS header)
+    var isSecure = (req.headers['x-forwarded-proto'] === 'https') || (req.connection && req.connection.encrypted);
+    res._secure = isSecure;
+
     // Auto-detect base URL from the request host so generated links/banners always
     // match whatever domain the site is reached through (env SITE_URL wins if set).
-    if (!process.env.SITE_URL) {
+    // Only detect once per cold start to avoid per-request race conditions.
+    if (!process.env.SITE_URL && !siteUrlDetected) {
       var hostHeader = req.headers['host'] || 'localhost';
       var hostNoPort = String(hostHeader).replace(/:\d+$/, '');
-      var detected = 'https://' + hostNoPort;
-      if (hostHeader !== SITE_URL.replace(/^https?:\/\//, '')) SITE_URL = detected;
+      SITE_URL = 'https://' + hostNoPort;
+      siteUrlDetected = true;
     }
 
     // CORS preflight
@@ -1829,7 +1857,9 @@ async function handleRequest(req, res) {
       var body = '';
       if (method === 'POST' || method === 'DELETE' || method === 'PATCH' || method === 'PUT') {
         var cl = parseInt(req.headers['content-length'], 10);
-        if (Number.isFinite(cl) && cl > MAX_FILE) {
+        var isFileUpload = pathname === '/api/v1/files' || pathname === '/api/file';
+        var bodyLimit = isFileUpload ? MAX_FILE : MAX_API_BODY;
+        if (Number.isFinite(cl) && cl > bodyLimit) {
           return sendJson(res, 413, {error: 'Payload too large'});
         }
         body = await new Promise((resolve) => {
@@ -1838,7 +1868,7 @@ async function handleRequest(req, res) {
           var done = false;
           req.on('data', c => {
             total += c.length;
-            if (total > MAX_FILE) { if (!done) { done = true; resolve(Buffer.alloc(0)); req.destroy(); return; } }
+            if (total > bodyLimit) { if (!done) { done = true; resolve(Buffer.alloc(0)); req.destroy(); return; } }
             if (!done) chunks.push(c);
           });
           req.on('end', () => { if (!done) { done = true; resolve(Buffer.concat(chunks)); } });
@@ -1920,7 +1950,7 @@ async function handleRequest(req, res) {
         var user = getUser(req);
         var fileName = '';
         try { fileName = decodeURIComponent(req.headers['x-file-name'] || ''); } catch(e) {}
-        fileName = String(fileName).trim().replace(/[\/\\]/g, '_').slice(0, 120) || 'file';
+        fileName = String(fileName).trim().replace(/[\/\\]/g, '_').replace(/[\x00-\x1f\x7f]/g, '').slice(0, 120) || 'file';
         var fileType = (req.headers['content-type'] || 'application/octet-stream').split(';')[0].trim();
         var blocked = /^text\/html|text\/javascript|application\/javascript/i;
         if (blocked.test(fileType)) fileType = 'application/octet-stream';
@@ -2077,6 +2107,15 @@ if (require.main === module) {
   server.listen(SERVER_PORT, () => {
     console.log('Shrinqo running on http://localhost:' + SERVER_PORT);
   });
+  // Graceful shutdown: stop accepting new connections, drain in-flight requests
+  function shutdown() {
+    console.log('Shutting down...');
+    server.close(() => { process.exit(0); });
+    // Force-kill after 5 seconds if connections don't drain
+    setTimeout(() => process.exit(1), 5000);
+  }
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }
 
 module.exports = { handleRequest, server };

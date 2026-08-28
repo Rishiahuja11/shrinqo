@@ -84,6 +84,7 @@ exports.handler = async (event, context) => {
   // Shim res
   const captured = { statusCode: 200, headers: {}, body: Buffer.alloc(0) };
   const res = {
+    _secure: true, // Netlify always serves over HTTPS
     writeHead(code, hdrs) { captured.statusCode = code; if (hdrs) Object.assign(captured.headers, hdrs); return this; },
     setHeader(n, v) { captured.headers[n.toLowerCase()] = v; return this; },
     write(chunk) { captured.body = Buffer.concat([captured.body, Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk))]); return true; },
