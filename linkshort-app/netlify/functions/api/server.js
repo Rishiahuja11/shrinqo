@@ -461,7 +461,7 @@ const SEC_HTTPS = {
   ...SEC,
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
 };
-const CSP = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://quge5.com https://nap5k.com https://al5sm.com https://fonts.googleapis.com https://app.netlify.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://quge5.com https://nap5k.com https://al5sm.com https://app.netlify.com; frame-src https://quge5.com https://nap5k.com https://al5sm.com https://app.netlify.com https://*.quge5.com https://*.nap5k.com https://*.al5sm.com";
+const CSP = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://quge5.com https://nap5k.com https://al5sm.com https://n6wxm.com https://5gvci.com https://fonts.googleapis.com https://app.netlify.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://quge5.com https://nap5k.com https://al5sm.com https://n6wxm.com https://5gvci.com https://app.netlify.com; frame-src https://quge5.com https://nap5k.com https://al5sm.com https://n6wxm.com https://5gvci.com https://app.netlify.com https://*.quge5.com https://*.nap5k.com https://*.al5sm.com https://*.n6wxm.com https://*.5gvci.com";
 
 function send(res, code, body, headers) {
   var hdrs = { ...(res._secure ? SEC_HTTPS : SEC), ...(headers || {}) };
