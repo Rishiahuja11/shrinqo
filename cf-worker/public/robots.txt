@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard.html
+Disallow: /step1.html
+Disallow: /step2.html
+Disallow: /step3.html
+
+Sitemap: https://short.smp45.qzz.io/sitemap.xml

@@ -1,0 +1,8 @@
+/data/data/com.termux/files/home/url-shortener/src/main/java/linkshort/BotManager.java
+/data/data/com.termux/files/home/url-shortener/src/main/java/linkshort/Config.java
+/data/data/com.termux/files/home/url-shortener/src/main/java/linkshort/LinkShortPlugin.java
+/data/data/com.termux/files/home/url-shortener/src/main/java/linkshort/NodeInstaller.java
+/data/data/com.termux/files/home/url-shortener/src/main/java/linkshort/NodeManager.java
+/data/data/com.termux/files/home/url-shortener/src/main/java/linkshort/OpsBridge.java
+/data/data/com.termux/files/home/url-shortener/src/main/java/linkshort/TunnelManager.java
+/data/data/com.termux/files/home/url-shortener/src/main/java/linkshort/WebAppDeployer.java

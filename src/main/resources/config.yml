@@ -1,0 +1,25 @@
+projects:
+  linkshort:
+    folder: "linkshort-app"
+    command: "node server.js"
+    token: ""
+    named-url: "https://short.smp45.qzz.io"
+    port: 10000
+
+tunnel:
+  token: "eyJhIjoiNTA3N2NkM2Q2YWZmZjYyZTgzODhiYzVmM2RmZmQ1YTgiLCJ0IjoiM2EzYzk0NTEtMmNmYy00YmU0LWE4ODAtZjI4Yzc0OTU2NjRhIiwicyI6IkxaUnBZdXkwOHVMeWdaWmJnVHo2dityNkhzaklWVjBqQTRIblBJNEh3NTh3WUJvUFcrcUwybm5BSjU2Sjh1NEVzMitrVlh5c3dTQ0FoYmlGNEdPZjdnPT0ifQ=="
+
+ops:
+  enabled: true
+  key: ""
+
+bot:
+  enabled: true
+  max: 2
+  names:
+    - "Steve_42"
+    - "Alex_77"
+    - "Notch"
+    - "Herobrine"
+    - "Dream"
+    - "Technoblade"

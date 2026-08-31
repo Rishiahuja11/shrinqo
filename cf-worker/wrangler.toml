@@ -1,0 +1,21 @@
+name = "linkshort"
+main = "src/worker.js"
+compatibility_date = "2025-01-01"
+
+# Static assets (index.html, css, js, images, robots, sitemap) are embedded
+# into the Worker by `node build.mjs` (see src/assets.js + dist/worker.js).
+# Run `node build.mjs` before `npx wrangler dev` or `npx wrangler deploy`.
+
+# KV namespace for links + rate limiting (created by deploy.sh; id cached in kv-id.txt).
+[[kv_namespaces]]
+binding = "KV"
+id = "e491a9c8afe84992aae4b2db2b026bd0"
+
+# GitHub-backed file storage (set these before `wrangler deploy`/`wrangler dev`).
+[vars]
+GITHUB_OWNER = "Rishiahuja11"
+GITHUB_REPO = "file2link-storage"
+GITHUB_BRANCH = "main"
+
+# GITHUB_TOKEN must be set as a secret for production: `npx wrangler secret put GITHUB_TOKEN`
+# For local dev use `GITHUB_TOKEN=... npx wrangler dev` or set it in a .dev.vars file.

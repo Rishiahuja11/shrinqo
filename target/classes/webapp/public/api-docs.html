@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shrinqo API — Docs &amp; Playground</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--accent:#2563eb;--accent-strong:#1d4ed8;--accent-soft:#eff6ff;--green:#059669;--green-soft:#ecfdf5;--grad:linear-gradient(135deg,#2563eb,#7c3aed);--ink:#0f172a;--ink2:#475569;--ink3:#94a3b8;--line:#e2e8f0;--bg:#f8fafc;--card:#fff;--code:#0b1220;--shadow:0 1px 3px rgba(15,23,42,.06),0 10px 40px -12px rgba(15,23,42,.12);--shadow-hover:0 4px 12px rgba(15,23,42,.08),0 24px 60px -16px rgba(37,99,235,.18)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;letter-spacing:-.011em;-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft);color:var(--accent-strong)}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px;border:2px solid #f8fafc}::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+a{color:var(--accent);text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 18px 80px;position:relative;z-index:1}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.orb.o1{width:420px;height:420px;background:rgba(37,99,235,.13);top:-140px;left:-110px}
+.orb.o2{width:360px;height:360px;background:rgba(5,150,105,.11);top:32%;right:-150px}
+.orb.o3{width:300px;height:300px;background:rgba(96,165,250,.11);bottom:-110px;left:28%}
+header.top{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.88);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid rgba(226,232,240,.6);padding:11px 0}
+header.top .bar{display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800;letter-spacing:-.03em;color:var(--ink)}
+.brand-icon{display:flex;width:38px;height:38px;align-items:center;justify-content:center;border-radius:12px;background:var(--grad);color:#fff;font-size:18px;box-shadow:0 4px 14px -4px rgba(37,99,235,.45);transition:transform .25s cubic-bezier(.22,1,.36,1)}
+.brand:hover .brand-icon{transform:scale(1.08) rotate(-3deg)}
+.brand-name span{color:var(--accent)}
+.badge{display:inline-block;background:var(--accent-soft);border:1px solid rgba(37,99,235,.15);border-radius:999px;padding:4px 14px;font-size:12px;font-weight:700;margin-left:auto;color:var(--accent)}
+.page-head{text-align:center;padding:30px 0 20px}
+.page-head h1 .grad{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+@keyframes shimmer{to{background-position:200% center}}
+.page-head h1 .grad{background-size:200% auto;animation:shimmer 4s linear infinite}
+h1{font-size:27px;margin-bottom:6px;letter-spacing:-.02em}
+.sub{color:var(--ink2);font-size:14px}
+.grid{display:grid;grid-template-columns:240px 1fr;gap:24px;position:relative;z-index:1}
+@media(max-width:840px){.grid{grid-template-columns:1fr}}
+nav.toc{position:sticky;top:76px;align-self:start;background:var(--card);border:1px solid rgba(226,232,240,.6);border-radius:16px;padding:14px;font-size:13px;box-shadow:var(--shadow)}
+nav.toc b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin:10px 0 6px}
+nav.toc b:first-child{margin-top:0}
+nav.toc a{display:block;padding:4px 8px;border-radius:8px;color:var(--ink2);transition:all .15s ease}
+nav.toc a:hover{background:var(--accent-soft);color:var(--accent)}
+section.card{background:var(--card);border:1px solid rgba(226,232,240,.6);border-radius:20px;padding:24px;margin-bottom:20px;box-shadow:var(--shadow);transition:box-shadow .3s ease,transform .3s cubic-bezier(.22,1,.36,1)}
+section.card:hover{box-shadow:var(--shadow-hover)}
+h2{font-size:19px;margin-bottom:10px;letter-spacing:-.01em}
+h3{font-size:15px;margin:16px 0 6px}
+p.dim{color:var(--ink2);font-size:13.5px}
+.step{display:flex;gap:14px;margin:14px 0;padding:18px;border:1px solid rgba(226,232,240,.6);border-radius:16px;background:#fff;box-shadow:var(--shadow);transition:all .3s cubic-bezier(.22,1,.36,1)}
+.step:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}
+.step .n{flex:none;width:38px;height:38px;border-radius:12px;background:var(--grad);color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px -4px rgba(37,99,235,.4)}
+code.i{background:#eef4fb;border:1px solid #dbe7f5;border-radius:6px;padding:1px 6px;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace;color:#1e40af}
+pre{background:var(--code);color:#d7e2f0;border-radius:14px;padding:14px 16px;font-size:12.5px;line-height:1.6;overflow-x:auto;font-family:ui-monospace,Menlo,Consolas,monospace;position:relative;margin:10px 0}
+pre .cbtn{position:absolute;top:8px;right:8px;background:#1e293b;color:#93c5fd;border:1px solid #334155;border-radius:7px;font-size:11px;padding:3px 10px;cursor:pointer}
+pre .cbtn:hover{background:#273549}
+.mth{display:inline-block;font-size:11px;font-weight:800;border-radius:6px;padding:2px 8px;margin-right:8px;letter-spacing:.04em;color:#fff;vertical-align:middle}
+.get{background:#059669}.post{background:#2563eb}.patch{background:#d97706}.del{background:#dc2626}
+.path{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+th{text-align:left;background:#f8fafc;padding:8px 10px;border:1px solid var(--line);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2)}
+td{padding:8px 10px;border:1px solid var(--line);vertical-align:top}
+td code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#1e40af;background:#eef4fb;padding:1px 5px;border-radius:5px}
+.pill{display:inline-block;font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:middle}
+.pill.auth{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.pill.open{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
+@keyframes pgFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes pgPop{0%{transform:scale(.65);opacity:0}60%{transform:scale(1.14)}100%{transform:scale(1);opacity:1}}
+#pg-out.fresh{animation:pgFade .35s ease}
+.pg-hist{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;align-items:center}
+.pg-hist button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 11px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;color:var(--ink2);transition:transform .12s}
+.pg-hist button:hover{border-color:#93c5fd;background:#eff6ff;color:var(--accent);transform:translateY(-1px)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.latpill{font-size:11px;font-weight:800;color:#475569;background:#f1f5f9;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-family:ui-monospace,Menlo,monospace}
+.streakpill{font-size:12px;font-weight:800;border-radius:999px;padding:3px 11px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;display:none}
+.pg-open{display:inline-flex;align-items:center;gap:6px;margin-left:10px;font-size:12px;font-weight:800;color:var(--green)}
+#pg-cfx{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:99}
+.btn-p{background:var(--grad);background-size:200% auto;color:#fff;border:none;border-radius:14px;padding:12px 28px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit;box-shadow:0 4px 18px -4px rgba(37,99,235,.45);transition:all .25s cubic-bezier(.22,1,.36,1)}
+.btn-p:hover{transform:translateY(-1px);box-shadow:0 6px 24px -4px rgba(37,99,235,.55)}
+.btn-p:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-s{background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:10px 20px;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink2);font-family:inherit;transition:all .2s ease}
+.btn-s:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.input-field{width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line);background:#f8fafc;color:var(--ink);outline:none;transition:all .25s ease}
+.input-field:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+</style>
+<link rel="stylesheet" href="/fx.css?v=1">
+<script src="/subfx.js?v=1"></script>
+<style>
+.card{animation:fx-page-in .6s var(--fx-ease) both}
+.card:nth-of-type(2){animation-delay:.05s}.card:nth-of-type(3){animation-delay:.1s}
+.card:nth-of-type(4){animation-delay:.15s}.card:nth-of-type(5){animation-delay:.2s}
+@keyframes fx-page-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="orb o1" aria-hidden="true"></div>
+<div class="orb o2" aria-hidden="true"></div>
+<div class="orb o3" aria-hidden="true"></div>
+<header class="top"><div class="wrap"><div class="bar">
+<a href="/" class="brand"><span class="brand-icon">🔗</span><span class="brand-name">Shrinqo</span></a>
+<span class="badge" id="ver-badge">API v2.0.0</span>
+</div></div></header>
+<div class="page-head wrap" style="display:block;max-width:1080px;padding-bottom:0">
+<h1>API <span class="grad">Documentation</span> &amp; Playground</h1>
+<div class="sub">Shorten links · pastes · file sharing · click analytics — everything on this page runs against the live API.</div>
+</div>
+<div class="wrap"><div class="grid">
+<nav class="toc">
+<b>Start</b>
+<a href="#quickstart">Quick start</a>
+<a href="#auth">Authentication</a>
+<a href="#conventions">Conventions</a>
+<b>Reference</b>
+<a href="#ep-health">Health &amp; index</a>
+<a href="#ep-auth">Account &amp; keys</a>
+<a href="#ep-create">Create links</a>
+<a href="#ep-manage">Manage links</a>
+<a href="#ep-stats">Analytics</a>
+<b>Tools</b>
+<a href="#playground">🎮 Playground</a>
+<b>Info</b>
+<a href="#errors">Errors &amp; limits</a>
+</nav>
+<main>
+<section class="card" id="quickstart">
+<h2>🚀 Quick start</h2>
+<div class="step"><div class="n">1</div><div><b>Shorten your first link</b> — no account needed:<pre><button class="cbtn" onclick="cp(this)">copy</button>curl -X POST https://short.smp45.qzz.io/api/v1/shorten \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://github.com"}'</pre></div></div>
+<div class="step"><div class="n">2</div><div><b>Create an API key</b> (30 s): register → open <a href="#ep-auth">keys</a> → copy the <code class="i">lsk_…</code> secret once.<pre><button class="cbtn" onclick="cp(this)">copy</button>curl -H "Authorization: Bearer lsk_YOUR_SECRET" \
+  https://short.smp45.qzz.io/api/v1/auth/me</pre></div></div>
+<div class="step"><div class="n">3</div><div><b>Claim a custom alias &amp; expiry:</b><pre><button class="cbtn" onclick="cp(this)">copy</button>curl -X POST https://short.smp45.qzz.io/api/v1/shorten \
+  -H "Authorization: Bearer lsk_YOUR_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com/sale","alias":"black-friday","expires_in":604800}'</pre>
+<p class="dim">→ live for 7 days at <code class="i">/black-friday</code>, then it returns 410 Gone automatically.</p></div></div>
+</section>
+
+<section class="card" id="auth">
+<h2>🔑 Authentication</h2>
+<table>
+<tr><th>Method</th><th>How</th><th>Best for</th></tr>
+<tr><td><b>Session cookie</b></td><td><code class="i">POST /api/v1/auth/login</code> sets <code class="i">ls_sess</code> (HttpOnly, 30 d). Browsers send it automatically.</td><td>The website, browser tools, playground below</td></tr>
+<tr><td><b>API key</b></td><td>Header <code class="i">Authorization: Bearer lsk_…</code>. Create via <code class="i">POST /api/v1/keys</code>.</td><td>Scripts, CI, apps — never expires until revoked</td></tr>
+</table>
+<p class="dim">Anonymous requests work for shortening, bulk, public feeds and stats. Custom aliases and all management/analytics endpoints need auth.</p>
+</section>
+
+<section class="card" id="conventions">
+<h2>📐 Conventions</h2>
+<table>
+<tr><th>Rule</th><th>Detail</th></tr>
+<tr><td>Success</td><td><code class="i">{"ok":true,"data":…}</code> — creation returns HTTP 201, everything else 200</td></tr>
+<tr><td>Error</td><td><code class="i">{"ok":false,"error":{"code":"…","message":"…"}}</code> with a meaningful status (400/401/403/404/409/410/429/502)</td></tr>
+<tr><td>Rate limits</td><td>Every response carries <code class="i">X-RateLimit-Limit / -Remaining / -Reset</code>; exceeding returns 429</td></tr>
+<tr><td>Pagination</td><td>List endpoints accept <code class="i">?limit=</code> (1–200) and <code class="i">?offset=</code>, and answer with <code class="i">total</code></td></tr>
+<tr><td>Deduplication</td><td>Identical content returns the existing link (<code class="i">deduplicated:true</code>) instead of a new row</td></tr>
+<tr><td>CORS</td><td>All <code class="i">/api/*</code> endpoints allow cross-origin calls</td></tr>
+</table>
+</section>
+
+<section class="card" id="ep-health">
+<h2>Health &amp; index</h2>
+<h3><span class="mth get">GET</span><span class="path">/api/v1/health</span><span class="pill open">public</span></h3>
+<p class="dim">Liveness + version + uptime. No auth.</p>
+<h3><span class="mth get">GET</span><span class="path">/api/v1</span><span class="pill open">public</span></h3>
+<p class="dim">Machine-readable endpoint catalog. Full spec: <a href="/openapi.json"><code class="i">GET /openapi.json</code></a> (OpenAPI 3.1).</p>
+</section>
+
+<section class="card" id="ep-auth">
+<h2>Account &amp; keys</h2>
+<h3><span class="mth post">POST</span><span class="path">/api/v1/auth/register</span></h3>
+<p class="dim">Body <code class="i">{name, password}</code> — name: 3–20 chars letters/digits/_; password ≥ 6. Sets session cookie.</p>
+<h3><span class="mth post">POST</span><span class="path">/api/v1/auth/login</span><span class="pill auth">auth</span></h3>
+<h3><span class="mth post">POST</span><span class="path">/api/v1/auth/logout</span> · <span class="path">/api/v1/auth/logout-all</span></h3>
+<h3><span class="mth post">POST</span><span class="path">/api/v1/auth/password</span><span class="pill auth">session only</span></h3>
+<p class="dim">Body <code class="i">{current_password, new_password}</code>. Revokes other sessions.</p>
+<h3><span class="mth get">GET</span><span class="path">/api/v1/auth/me</span><span class="pill auth">auth</span></h3>
+<p class="dim">Username, created date, link count, lifetime clicks.</p>
+<h3><span class="mth get">GET</span><span class="path">/api/v1/keys</span> · <span class="mth post">POST</span><span class="path">/api/v1/keys</span> · <span class="mth del">DELETE</span><span class="path">/api/v1/keys/:id</span><span class="pill auth">auth</span></h3>
+<p class="dim">The create response contains <code class="i">secret</code> exactly once — store it immediately.</p>
+</section>
+
+<section class="card" id="ep-create">
+<h2>Create links</h2>
+<h3><span class="mth post">POST</span><span class="path">/api/v1/shorten</span><span class="pill open">anon ok</span></h3>
+<table>
+<tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+<tr><td><code>url</code> or <code>text</code></td><td>string</td><td>URL (http/s) or paste up to 100 k chars — one required</td></tr>
+<tr><td><code>alias</code></td><td>string</td><td><b>auth required.</b> 1–32 chars <code>a-z A-Z 0-9 _ -</code>, no reserved words</td></tr>
+<tr><td><code>expires_in</code></td><td>seconds</td><td>optional, max 31 536 000 (1 year) → link serves 410 after</td></tr>
+<tr><td><code>name</code></td><td>string</td><td>optional label</td></tr>
+</table>
+<h3><span class="mth post">POST</span><span class="path">/api/v1/shorten/bulk</span><span class="pill open">anon ok</span></h3>
+<p class="dim">Body <code class="i">{links:[{url}|{text}, …]}</code> — up to 25 items; per-item success/error results.</p>
+<h3><span class="mth post">POST</span><span class="path">/api/v1/files</span><span class="pill open">anon ok</span></h3>
+<p class="dim">Raw bytes as body, <code class="i">X-File-Name</code> header, ≤ 100 MB. Chunked to GitHub storage; served back at <code class="i">/:id/dl</code>.</p>
+</section>
+<section class="card" id="ep-manage">
+<h2>Manage links</h2>
+<h3><span class="mth get">GET</span><span class="path">/api/v1/links</span><span class="pill auth">auth</span></h3>
+<p class="dim">Your links. Query: <code class="i">?kind=url|text|file</code>, <code class="i">?q=search</code> (matches url/text/name/id), <code class="i">?limit=</code>, <code class="i">?offset=</code>.</p>
+<h3><span class="mth get">GET</span><span class="path">/api/v1/links/public</span><span class="pill open">public</span></h3>
+<p class="dim">Recent public feed with pagination.</p>
+<h3><span class="mth get">GET</span><span class="path">/api/v1/links/:id</span><span class="pill open">public+</span></h3>
+<p class="dim">Public view hides private fields; owners additionally get <code class="i">enabled</code>, <code class="i">expires_at</code> and full paste text.</p>
+<h3><span class="mth patch">PATCH</span><span class="path">/api/v1/links/:id</span><span class="pill auth">owner</span></h3>
+<p class="dim">Any of: <code class="i">{url}</code>, <code class="i">{text}</code>, <code class="i">{name}</code>, <code class="i">{enabled:true|false}</code>, <code class="i">{expires_in:seconds|null}</code>. Response lists changed fields.</p>
+<h3><span class="mth del">DELETE</span><span class="path">/api/v1/links/:id</span><span class="pill auth">owner</span></h3>
+<p class="dim">Removes the link and its dedup entries — the same content can be shortened again afterwards.</p>
+</section>
+
+<section class="card" id="ep-stats">
+<h2>Analytics</h2>
+<h3><span class="mth get">GET</span><span class="path">/api/v1/links/:id/stats?days=7</span><span class="pill auth">owner</span></h3>
+<table>
+<tr><th>Field</th><th>Meaning</th></tr>
+<tr><td><code>by_day</code></td><td><code>[{d:"2026-08-23",c:14},…]</code> daily clicks for the period (1–90 days)</td></tr>
+<tr><td><code>top_referrers</code></td><td>top 10 referring hostnames (+ direct)</td></tr>
+<tr><td><code>recent</code></td><td>last 50 hits: timestamp, referrer, bot flag</td></tr>
+<tr><td><code>tracked_clicks</code></td><td>rows kept in the analytics window (total_clicks is lifetime)</td></tr>
+</table>
+<h3><span class="mth get">GET</span><span class="path">/api/v1/stats</span><span class="pill open">public</span></h3>
+<p class="dim">Platform totals: links, lifetime clicks, last-24 h clicks, per-kind counts.</p>
+<h3><span class="mth get">GET</span><span class="path">/api/v1/preview?url=…</span><span class="pill open">public</span></h3>
+<p class="dim">OpenGraph scrape of any URL (title/description/image) — the engine that powers link previews. 10/min.</p>
+</section>
+
+<section class="card" id="errors">
+<h2>Errors &amp; rate limits</h2>
+<table>
+<tr><th>Status</th><th>code</th><th>When</th></tr>
+<tr><td>400</td><td>invalid_url · empty_text · invalid_alias …</td><td>bad input; private-network URLs are rejected</td></tr>
+<tr><td>401</td><td>unauthorized / auth_required</td><td>no or bad session/key</td></tr>
+<tr><td>403</td><td>wrong_password</td><td>password change mismatch</td></tr>
+<tr><td>404</td><td>not_found / unknown_endpoint</td><td>missing resource</td></tr>
+<tr><td>409</td><td>alias_taken · alias_reserved · username_taken</td><td>conflicts</td></tr>
+<tr><td>410</td><td>—</td><td>link expired or disabled (redirect route serves an HTML page)</td></tr>
+<tr><td>429</td><td>rate_limited</td><td>see headers for budget &amp; reset</td></tr>
+<tr><td>502/503</td><td>upload_failed / storage_unavailable</td><td>file storage issues</td></tr>
+</table>
+<table>
+<tr><th>Scope</th><th>Budget</th></tr>
+<tr><td>Create link (v1)</td><td>30 / min per IP</td></tr>
+<tr><td>Bulk</td><td>3 calls / min</td></tr>
+<tr><td>File upload</td><td>6 / min</td></tr>
+<tr><td>Preview</td><td>10 / min</td></tr>
+<tr><td>Login/register</td><td>8 / min</td></tr>
+<tr><td>Redirect hits</td><td>120 / min</td></tr>
+</table>
+</section>
+
+<section class="card" id="playground">
+<h2>🎮 Playground</h2>
+<p class="dim" style="margin-bottom:12px">Pick an endpoint, tweak the body, hit <b>Run</b> — real requests against the live API. Paste a Bearer key to test authed endpoints (kept in this tab's memory only).</p>
+<div style="display:grid;grid-template-columns:minmax(0,340px) 1fr;gap:16px" class="pg-grid">
+<div style="min-width:0">
+<input id="pg-key" class="input-field" placeholder="Bearer lsk_… (optional)" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;margin-bottom:8px">
+<div id="pg-keyhint" style="font-size:11.5px;color:var(--ink2);background:var(--accent-soft);border:1px solid rgba(37,99,235,.15);border-radius:10px;padding:7px 11px;margin-bottom:10px;line-height:1.5"><b style="color:var(--accent)">No secret key yet?</b> Authed endpoints also accept your session — just <b>Register</b> or <b>Login</b> below first. Prefer a key? Run <b>Account → POST /keys</b>: the <code style="background:#fff;border-radius:5px;padding:0 4px;font-family:ui-monospace,Menlo,monospace">lsk_…</code> secret gets pasted into this box automatically, and it's shown only once.</div>
+<div id="pg-keyflash" style="display:none;font-size:11.5px;color:#065f46;background:var(--green-soft);border:1px solid #6ee7b7;border-radius:10px;padding:7px 11px;margin-bottom:10px;font-weight:700">🔑 New API key captured — dropped into the Bearer box above. It won't be shown again, copy it somewhere safe!</div>
+<div id="pg-list"></div>
+</div>
+<div style="min-width:0">
+<div id="pg-title" style="margin-bottom:8px"></div>
+<textarea id="pg-body" class="input-field" rows="7" spellcheck="false" placeholder='{"url":"https://example.com"}' style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.55;background:var(--code);color:#d7e2f0;border-color:#1e293b;resize:vertical"></textarea>
+<div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;align-items:center">
+<button id="pg-run" class="btn-p" onclick="runPg()">⚡ Run</button>
+<button onclick="copyCurl()" class="btn-s">Copy as cURL</button>
+<span id="pg-status" style="font-size:12.5px;font-weight:700"></span>
+<span class="latpill" id="pg-lat" style="display:none"></span>
+<span class="streakpill" id="pg-streak"></span>
+<a id="pg-open" class="pg-open" target="_blank" rel="noopener" style="display:none">open result ↗</a>
+</div>
+<pre id="pg-out" style="max-height:380px;overflow:auto;margin-top:12px;position:relative">// response appears here</pre>
+<div class="pg-hist" id="pg-hist"></div>
+</div>
+</div>
+</section>
+</main>
+</div></div>
+<canvas id="pg-cfx"></canvas>
+<script src="/safeads.js?v=15"></script>
+<script>
+function cp(b){var t=b.parentNode.innerText.replace(/copy\n?/,'').trim();navigator.clipboard.writeText(t).then(function(){b.textContent='copied!';setTimeout(function(){b.textContent='copy'},1200)})}
+var EPS=[
+ {g:'Account',m:'POST',p:'/api/v1/auth/register',a:false,b:{name:'demo_'+Math.random().toString(36).slice(2,7),password:'secret123'},d:'Create account (sets session cookie used by playground)'},
+ {g:'Account',m:'POST',p:'/api/v1/auth/login',a:false,b:{name:'demo',password:'secret123'},d:'Log in'},
+ {g:'Account',m:'GET',p:'/api/v1/auth/me',a:true,d:'Who am I + totals'},
+ {g:'Account',m:'POST',p:'/api/v1/keys',a:true,b:{name:'my-key'},d:'Create API key — the lsk_… secret is auto-pasted into the Bearer box (shown only this once)'},
+ {g:'Account',m:'GET',p:'/api/v1/keys',a:true,d:'List my API keys'},
+ {g:'Create',m:'POST',p:'/api/v1/shorten',a:false,b:{url:'https://github.com'},d:'Shorten a URL'},
+ {g:'Create',m:'POST',p:'/api/v1/shorten',a:false,b:{text:'Hello from Shrinqo paste!'},d:'Create a text paste'},
+ {g:'Create',m:'POST',p:'/api/v1/shorten',a:true,b:{url:'https://example.com/sale',alias:'my-alias-'+Math.random().toString(36).slice(2,6),expires_in:604800},d:'Custom alias + 7-day expiry (auth)'},
+ {g:'Create',m:'POST',p:'/api/v1/shorten/bulk',a:false,b:{links:[{url:'https://a.example'},{url:'https://b.example'},{text:'bulk paste'}]},d:'Bulk create up to 25'},
+ {g:'Manage',m:'GET',p:'/api/v1/links?limit=20&offset=0',a:true,d:'My links (search: add &q=…)'},
+ {g:'Manage',m:'GET',p:'/api/v1/links/public?limit=10',a:false,d:'Public feed'},
+ {g:'Manage',m:'PATCH',p:'/api/v1/links/ID_HERE',a:true,b:{enabled:true,url:'https://new-target.example'},d:'Update link (put real id in path!)'},
+ {g:'Manage',m:'DELETE',p:'/api/v1/links/ID_HERE',a:true,d:'Delete link'},
+ {g:'Analytics',m:'GET',p:'/api/v1/links/ID_HERE/stats?days=7',a:true,d:'Click analytics for one link'},
+ {g:'Analytics',m:'GET',p:'/api/v1/stats',a:false,d:'Global platform stats'},
+ {g:'Analytics',m:'GET',p:'/api/v1/preview?url=https://example.com',a:false,d:'OpenGraph preview of any URL'},
+ {g:'System',m:'GET',p:'/api/v1/health',a:false,d:'Service health'}
+];
+var cur=null;
+var LOADS=['contacting the hamsters…','sprinkling shortener dust…','warming up the tubes…','negotiating with the router…','counting characters…','almost there…'];
+var PRAISE=['nailed it!','smooth.','look at that JSON glow ✨','clean response. chef’s kiss.','easy money.'];
+var QUIPS={429:'whoa, speed demon — rate limited. breathe 🧘',401:'locked! log in or paste a Bearer key 🔑',403:'no entry — this one needs auth.',404:'lost in the void — check that path/id.',410:'that link expired into the shadow realm 👻',422:'the body didn’t pass inspection.',500:'server tripped over a cable. our bad.'};
+var HIST=[],streak=0,lastRaw='';
+function el(id){return document.getElementById(id)}
+function renderList(){
+ var h='',lastG='';
+ EPS.forEach(function(e,i){
+ if(e.g!==lastG){h+='<div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;margin:8px 0 4px">'+e.g+'</div>';lastG=e.g}
+ h+='<div class="pg-e" data-i="'+i+'" onclick="pick('+i+')" style="border:1px solid #e2e8f0;border-radius:12px;padding:8px 10px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;background:#fff;transition:all .18s cubic-bezier(.22,1,.36,1)"><span class="mth '+e.m.toLowerCase()+'">'+e.m+'</span><span style="font-family:ui-monospace,Menlo,monospace;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+e.p.replace('/api/v1','')+'</span></div>';
+ });
+ el('pg-list').innerHTML=h;
+}
+function pick(i){
+ cur=EPS[i];
+ el('pg-title').innerHTML='<span class="mth '+cur.m.toLowerCase()+'">'+cur.m+'</span><span class="path">'+cur.p+'</span>'+(cur.a?' <span class="pill auth">auth</span>':'')+'<br><span class="dim" style="font-size:12.5px">'+cur.d+'</span>';
+ el('pg-body').value=cur.b?JSON.stringify(cur.b,null,2):'';
+ resetOut();el('pg-status').textContent='';hideExtras();
+ Array.prototype.forEach.call(document.querySelectorAll('.pg-e'),function(n,j){n.style.background=j===i?'#eff6ff':'#fff';n.style.borderColor=j===i?'#93c5fd':'#e2e8f0'});
+}
+function resetOut(){var o=el('pg-out');o.textContent='// response appears here';o.classList.remove('fresh')}
+function hideExtras(){el('pg-lat').style.display='none';el('pg-open').style.display='none'}
+function hdrs(){var h={'Content-Type':'application/json'};var k=el('pg-key').value.trim();if(k)return Object.assign(h,{'Authorization':'Bearer '+k.replace(/^Bearer\s+/i,'')});return h}
+async function runPg(){
+ if(!cur)return pick(5);
+ var st=el('pg-status'),btn=el('pg-run');
+ btn.disabled=true;btn.style.opacity='.65';btn.textContent='⏳ Running';
+ hideExtras();
+ var li=0;st.style.color='#64748b';st.textContent='⏳ '+LOADS[0];
+ var spin=setInterval(function(){li=(li+1)%LOADS.length;st.textContent='⏳ '+LOADS[li]},420);
+ var opt={method:cur.m,headers:hdrs()};
+ var bt=el('pg-body').value.trim();
+ clearInterval(spin);
+ if(bt&&cur.m!=='GET'){try{JSON.parse(bt);opt.body=bt}catch(e){st.textContent='✗ invalid JSON body';st.style.color='#dc2626';btn.disabled=false;btn.style.opacity='1';btn.textContent='⚡ Run';return}}
+ var t0=performance.now();
+ try{
+  var r=await fetch(cur.p,opt);var t=await r.text();
+  var ms=Math.round(performance.now()-t0);lastRaw=t||'(empty)';
+  var ok=r.ok;
+  streak=ok?streak+1:0;
+  st.textContent=(ok?'✓ ':'✗ ')+r.status+' — '+(ok?PRAISE[Math.floor(Math.random()*PRAISE.length)]:(QUIPS[r.status]||'something went sideways'));
+  st.style.color=ok?'#059669':'#dc2626';
+  st.style.animation='none';void st.offsetWidth;st.style.animation='pgPop .3s ease';
+  var lat=el('pg-lat');lat.style.display='';lat.textContent=ms+' ms';lat.style.borderColor=ok?'#a7f3d0':'#fecaca';
+  try{t=JSON.stringify(JSON.parse(t),null,2)}catch(e){}
+  var out=el('pg-out');out.textContent=t||'(empty)';out.classList.remove('fresh');void out.offsetWidth;out.classList.add('fresh');
+  pushHist(r.status,ok,ms,bt);
+  updateStreak();
+  try{
+   var j=JSON.parse(lastRaw);
+   var u=j&&j.data&&(j.data.short_url||j.data.url);
+   if(ok&&u){var a=el('pg-open');a.href=u;a.style.display='';a.onclick=function(){confetti()}}
+   if(ok&&cur.m==='POST'&&cur.p==='/api/v1/keys'&&j&&j.data&&j.data.secret){
+    el('pg-key').value=j.data.secret;
+    var f=el('pg-keyflash');f.style.display='';
+    setTimeout(function(){f.style.display='none'},15000);
+    st.textContent='✓ 201 — key created & captured into the Bearer box 🔑';
+   }
+  }catch(e){}
+  if(ok)confetti(r.status);
+ }catch(e){
+  streak=0;updateStreak();
+  st.textContent='✗ network error — is the server awake?';st.style.color='#dc2626';
+  el('pg-out').textContent=String(e);
+ }
+ btn.disabled=false;btn.style.opacity='1';btn.textContent='⚡ Run';
+}
+function pushHist(status,ok,ms,body){
+ HIST.push({i:EPS.indexOf(cur),body:body,out:lastRaw,status:el('pg-status').textContent,ok:ok,ms:ms});
+ if(HIST.length>12)HIST.shift();
+ var h=el('pg-hist');
+ h.innerHTML='<span style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;margin-right:2px">History</span>'+HIST.map(function(x,k){
+  return '<button onclick="restore('+k+')"><span class="dot" style="background:'+(x.ok?'#059669':'#dc2626')+'"></span>'+EPS[x.i].p.replace('/api/v1','')+' · '+x.ms+'ms</button>'
+ }).join('');
+}
+function restore(k){
+ var x=HIST[k];if(!x)return;
+ pick(x.i);
+ if(x.body)el('pg-body').value=x.body;
+ el('pg-out').textContent=x.out;el('pg-out').classList.add('fresh');
+ el('pg-status').textContent=x.status;el('pg-status').style.color=x.ok?'#059669':'#dc2626';
+ el('pg-lat').style.display='';el('pg-lat').textContent=x.ms+' ms';
+}
+function updateStreak(){
+ var s=el('pg-streak');
+ if(streak>=2){s.style.display='';s.textContent='🔥 '+streak+' in a row';s.style.animation='none';void s.offsetWidth;s.style.animation='pgPop .3s ease'}
+ else s.style.display='none';
+}
+function confetti(){
+ var c=el('pg-cfx');if(!c)return;
+ c.width=innerWidth;c.height=innerHeight;
+ var x=c.getContext('2d');
+ var cols=['#2563eb','#059669','#34d399','#60a5fa','#fbbf24','#f472b6'];
+ var ps=[];
+ for(var i=0;i<80;i++)ps.push({x:c.width/2+(Math.random()-.5)*260,y:c.height*.32,vx:(Math.random()-.5)*9,vy:-Math.random()*11-5,g:.33,s:Math.random()*7+4,r:Math.random()*Math.PI,vr:(Math.random()-.5)*.35,col:cols[i%cols.length],life:60+Math.random()*35});
+ (function tick(){
+  x.clearRect(0,0,c.width,c.height);
+  var alive=false;
+  ps.forEach(function(p){
+   if(p.life<=0)return;alive=true;p.life--;
+   p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.r+=p.vr;
+   x.save();x.translate(p.x,p.y);x.rotate(p.r);
+   x.globalAlpha=Math.min(1,p.life/25);x.fillStyle=p.col;
+   x.fillRect(-p.s/2,-p.s/2,p.s,p.s*.62);x.restore();
+  });
+  if(alive)requestAnimationFrame(tick);else x.clearRect(0,0,c.width,c.height);
+ })();
+}
+function copyCurl(){
+ if(!cur)return;
+ var k=el('pg-key').value.trim();
+ var c='curl -X '+cur.m+' "https://short.smp45.qzz.io'+cur.p+'"';
+ if(k)c+=' -H "Authorization: Bearer '+k.replace(/^Bearer\s+/i,'')+'"';
+ var bt=el('pg-body').value.trim();
+ if(bt&&cur.m!=='GET')c+=' -H "Content-Type: application/json" --data \''+bt+'\'';
+ navigator.clipboard.writeText(c);
+}
+document.addEventListener('keydown',function(e){
+ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&cur){e.preventDefault();runPg()}
+});
+fetch('/api/v1/health').then(function(r){return r.json()}).then(function(d){if(d&&d.data&&d.data.version)el('ver-badge').textContent='API v'+d.data.version}).catch(function(){});
+renderList();pick(5);
+</script>
+</body>
+</html>

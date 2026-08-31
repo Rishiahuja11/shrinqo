@@ -1,0 +1,297 @@
+/* ============================================================
+   Shrinqo FX — master motion layer
+   Coordinates Animate.css / Hover.css / Magic / AOS etc.
+   ============================================================ */
+
+:root {
+  --fx-grad: linear-gradient(90deg, #2563eb, #7c3aed, #0ea5e9, #2563eb);
+  --fx-ease: cubic-bezier(.22, 1, .36, 1);
+  --fx-ease-bounce: cubic-bezier(.68, -0.55, .265, 1.55);
+}
+
+/* ---------- page load choreography ---------- */
+@keyframes fx-page-in {
+  from { opacity: 0; transform: translateY(14px) scale(.995); }
+  to { opacity: 1; transform: none; }
+}
+body { animation: fx-page-in .55s var(--fx-ease) both; }
+header.glass-nav {
+  transition: box-shadow .35s ease, background .35s ease, backdrop-filter .35s ease;
+}
+header.glass-nav.scrolled {
+  background: rgba(255,255,255,.82);
+  box-shadow: 0 10px 30px -18px rgba(15,23,42,.25);
+}
+
+/* ---------- gradient shimmer title ---------- */
+.fx-gradient-text, .hero-title .grad {
+  background: var(--fx-grad);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: fx-gradient-slide 6s linear infinite;
+}
+@keyframes fx-gradient-slide {
+  to { background-position: 300% center; }
+}
+
+/* ---------- floating orbs ---------- */
+.hero-orb { animation: fx-orb-float 14s ease-in-out infinite alternate; will-change: transform; }
+.hero-orb.orb2 { animation-duration: 18s; animation-delay: -4s; }
+.hero-orb.orb3 { animation-duration: 22s; animation-delay: -9s; }
+@keyframes fx-orb-float {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(40px, -34px) scale(1.12); }
+}
+
+/* ---------- badge pulse dot ---------- */
+.hero-badge .dot { animation: fx-dot-pulse 2s ease infinite; }
+@keyframes fx-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,.45); }
+  50% { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+}
+
+/* ---------- typed caret ---------- */
+.fx-typed-wrap::after {
+  content: '|';
+  margin-left: 2px;
+  color: var(--accent, #2563eb);
+  animation: fx-caret 1s steps(1) infinite;
+  font-weight: 700;
+}
+@keyframes fx-caret { 50% { opacity: 0; } }
+
+/* ---------- counters ---------- */
+.fx-counter { font-variant-numeric: tabular-nums; }
+
+/* ---------- card tilt + lift ---------- */
+.fx-tilt {
+  transform-style: preserve-3d;
+  transition: transform .45s var(--fx-ease), box-shadow .45s var(--fx-ease);
+  will-change: transform;
+}
+.fx-tilt:hover {
+  box-shadow: 0 24px 48px -20px rgba(37, 99, 235, .35);
+  z-index: 2;
+}
+.feature-card, .step-card, .tool-card { border-radius: 22px; }
+
+/* icon pop on card hover */
+.feature-card .feature-icon,
+.step-card .step-num {
+  transition: transform .4s var(--fx-ease-bounce);
+}
+.feature-card:hover .feature-icon,
+.step-card:hover .step-num { transform: scale(1.22) rotate(-5deg); }
+
+/* ---------- sheen sweep buttons ---------- */
+.fx-btn {
+  position: relative;
+  overflow: hidden;
+  transition: transform .18s var(--fx-ease), box-shadow .3s ease, filter .25s ease;
+}
+.fx-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 -60%;
+  width: 45%;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,.5), transparent);
+  transform: skewX(-18deg);
+  transition: left .55s var(--fx-ease);
+  pointer-events: none;
+}
+.fx-btn:hover::before { left: 130%; }
+.fx-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 28px -12px rgba(37,99,235,.55); }
+.fx-btn:active { transform: translateY(0) scale(.97); }
+
+/* ---------- section reveal upgrade (drives existing .sr system) ---------- */
+.sr {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity .7s var(--fx-ease), transform .7s var(--fx-ease);
+}
+.sr.delay-1 { transition-delay: .08s; }
+.sr.delay-2 { transition-delay: .16s; }
+.sr.delay-3 { transition-delay: .24s; }
+.sr.revealed { opacity: 1; transform: none; }
+
+.section-badge {
+  display: inline-block;
+  animation: fx-badge-glow 3s ease-in-out infinite;
+}
+@keyframes fx-badge-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,.18); }
+  50% { box-shadow: 0 0 0 8px rgba(37,99,235,0); }
+}
+
+/* ---------- input focus magic ---------- */
+.input-field, input, textarea, select {
+  transition: border-color .25s ease, box-shadow .3s ease, transform .2s ease;
+}
+.input-field:focus, input:focus, textarea:focus {
+  border-color: var(--accent, #2563eb) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, .13);
+  transform: translateY(-1px);
+}
+
+/* ---------- copy feedback ---------- */
+@keyframes fx-copied-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.14); filter: brightness(1.15); }
+  100% { transform: scale(1); }
+}
+.fx-copied { animation: fx-copied-pop .45s var(--fx-ease-bounce); }
+
+/* ---------- result card entrance ---------- */
+@keyframes fx-result-in {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+.fx-result-in { animation: fx-result-in .5s var(--fx-ease) both; }
+
+/* ---------- scroll progress bar ---------- */
+#fx-progress {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  z-index: 999;
+  background: var(--fx-grad);
+  background-size: 200% 100%;
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  pointer-events: none;
+}
+
+/* ---------- smooth anchor scrolling ---------- */
+html { scroll-behavior: smooth; }
+
+/* ---------- FAQ accordion polish ---------- */
+details.faq-item, .faq-item {
+  transition: transform .3s var(--fx-ease), box-shadow .3s ease;
+}
+details.faq-item:hover, .faq-item:hover {
+  transform: translateX(4px);
+}
+
+/* ---------- footer fade ---------- */
+footer.site-foot, .site-foot {
+  animation: none;
+}
+
+/* ---------- accessibility: kill all motion if requested ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   Shrinqo FX v2 — cinematic layer
+   aurora · particles · cursor glow · marquee · glare · ripple
+   magnetic buttons · celebration · pop · shake
+   ============================================================ */
+
+/* ---------- aurora backdrop ---------- */
+.fx-aurora{position:absolute;inset:-20% -10%;overflow:hidden;pointer-events:none;z-index:0}
+.fx-aurora i{position:absolute;display:block;border-radius:50%;filter:blur(70px);opacity:.5;will-change:transform}
+.fx-aurora i:nth-child(1){width:44vmax;height:44vmax;left:-12%;top:-18%;background:radial-gradient(circle at 30% 30%,rgba(59,130,246,.55),transparent 65%);animation:fx-a1 26s ease-in-out infinite alternate}
+.fx-aurora i:nth-child(2){width:38vmax;height:38vmax;right:-14%;top:6%;background:radial-gradient(circle at 60% 40%,rgba(124,58,237,.45),transparent 65%);animation:fx-a2 31s ease-in-out infinite alternate}
+.fx-aurora i:nth-child(3){width:34vmax;height:34vmax;left:22%;bottom:-30%;background:radial-gradient(circle at 50% 50%,rgba(14,165,233,.42),transparent 62%);animation:fx-a3 36s ease-in-out infinite alternate}
+@keyframes fx-a1{to{transform:translate(9vw,7vh) scale(1.15)}}
+@keyframes fx-a2{to{transform:translate(-8vw,10vh) scale(.92)}}
+@keyframes fx-a3{to{transform:translate(6vw,-9vh) scale(1.2)}}
+.hero,.hero-content,.main-card{position:relative}
+#hero-section>.hero-orb,#hero-section>#fx-particles{z-index:0}
+#hero-section>*:not(.fx-aurora):not(#fx-particles):not(.hero-orb){z-index:1}
+
+/* ---------- particle canvas ---------- */
+#fx-particles{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+/* ---------- cursor glow ---------- */
+#fx-glow{position:fixed;top:0;left:0;width:340px;height:340px;margin:-170px 0 0 -170px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,.13),rgba(124,58,237,.07) 45%,transparent 70%);pointer-events:none;z-index:3;mix-blend-mode:multiply;will-change:transform}
+
+/* ---------- marquee ticker ---------- */
+.fx-marquee{position:relative;overflow:hidden;border-top:1px solid rgba(226,232,240,.8);border-bottom:1px solid rgba(226,232,240,.8);background:rgba(255,255,255,.65);backdrop-filter:blur(8px)}
+.fx-marquee-track{display:inline-flex;white-space:nowrap;animation:fx-marquee 30s linear infinite;will-change:transform}
+.fx-marquee:hover .fx-marquee-track{animation-play-state:paused}
+.fx-marquee b{display:inline-flex;align-items:center;padding:12px 26px;font-size:12px;font-weight:800;color:#334155;letter-spacing:.09em;text-transform:uppercase}
+.fx-marquee b::after{content:'✦';margin-left:26px;color:#2563eb;font-size:10px}
+@keyframes fx-marquee{to{transform:translateX(-50%)}}
+
+/* ---------- pointer glare on cards ---------- */
+.fx-glare{position:relative;overflow:hidden}
+.fx-glare::after{content:'';position:absolute;inset:-40%;background:radial-gradient(circle at var(--gx,50%) var(--gy,50%),rgba(255,255,255,.30),transparent 42%);opacity:0;transition:opacity .35s ease;pointer-events:none;border-radius:inherit;z-index:1}
+.fx-glare:hover::after{opacity:1}
+
+/* ---------- magnetic buttons ---------- */
+.fx-magnet{will-change:transform}
+
+/* ---------- click ripple ---------- */
+.fx-btn .fx-ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:fx-ripple .65s ease-out forwards;pointer-events:none}
+@keyframes fx-ripple{to{transform:scale(3.4);opacity:0}}
+
+/* ---------- success celebration ---------- */
+.fx-celebrate{animation:fx-celebrate 1s var(--fx-ease-bounce)}
+@keyframes fx-celebrate{0%{box-shadow:0 0 0 0 rgba(16,185,129,.4)}60%{box-shadow:0 0 0 24px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+
+/* ---------- qr / media pop ---------- */
+.fx-pop{animation:fx-pop .7s var(--fx-ease-bounce) both}
+@keyframes fx-pop{from{transform:scale(.35) rotate(-9deg);opacity:0}to{transform:none;opacity:1}}
+
+/* ---------- error shake ---------- */
+.fx-shake{animation:fx-shake .5s cubic-bezier(.36,.07,.19,.97)}
+@keyframes fx-shake{10%,90%{transform:translateX(-1px)}20%,80%{transform:translateX(2px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
+
+/* ---------- confetti canvas above everything ---------- */
+.confetti-canvas{z-index:2147483000!important;pointer-events:none}
+
+/* ============================================================
+   FX v3 — preloader handoff · spotlight · conic ring · panels
+   ============================================================ */
+
+/* ---------- per-card spotlight ---------- */
+.fx-spot{position:relative}
+.fx-spot::before{content:'';position:absolute;inset:-1px;border-radius:inherit;background:radial-gradient(380px circle at var(--mx,-500px) var(--my,-500px),rgba(37,99,235,.12),rgba(124,58,237,.08) 38%,transparent 62%);opacity:0;transition:opacity .4s ease;pointer-events:none;z-index:0}
+.fx-spot:hover::before{opacity:1}
+.fx-spot>*{position:relative;z-index:1}
+
+/* ---------- rotating conic border ---------- */
+@property --ring-a{syntax:'<angle>';initial-value:0deg;inherits:false}
+.fx-ring{position:relative}
+.fx-ring::before{content:'';position:absolute;inset:-2px;border-radius:inherit;padding:2px;background:conic-gradient(from var(--ring-a),#2563eb,#7c3aed,#0ea5e9,#10b981,#2563eb);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;animation:fx-ring-spin 5s linear infinite;opacity:.65;pointer-events:none;z-index:0}
+@keyframes fx-ring-spin{to{--ring-a:360deg}}
+.fx-ring>*{position:relative;z-index:1}
+
+/* ---------- tool panel switch-in ---------- */
+.panel-live{animation:fx-panel-in .34s var(--fx-ease)}
+@keyframes fx-panel-in{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+
+/* ---------- stat completion pop ---------- */
+.stat-done{animation:fx-stat-pop .55s var(--fx-ease-bounce)}
+@keyframes fx-stat-pop{40%{transform:scale(1.18)}100%{transform:none}}
+
+/* ---------- underline draw links ---------- */
+.fx-ul{position:relative;text-decoration:none}
+.fx-ul::after{content:'';position:absolute;left:0;bottom:-3px;height:2px;width:100%;background:#2563eb;border-radius:2px;transform:scaleX(0);transform-origin:right;transition:transform .35s var(--fx-ease)}
+.fx-ul:hover::after{transform:scaleX(1);transform-origin:left}
+
+/* ============================================================
+   FX v4 — depth parallax · directional reveals · watermark
+   ============================================================ */
+
+/* directional reveals override the default rise */
+.sr.sr-l{transform:translateX(-36px)}
+.sr.sr-r{transform:translateX(36px)}
+.sr.sr-l.revealed,.sr.sr-r.revealed{transform:none}
+
+/* hero orb depth layers (JS drives margin, CSS keeps float anim) */
+.hero-orb{will-change:transform,margin}
+
+/* footer mega watermark */
+.fx-mark{position:relative;overflow:hidden;height:clamp(80px,14vw,180px);pointer-events:none}
+.fx-mark b{position:absolute;left:50%;top:50%;white-space:nowrap;font-size:clamp(90px,17vw,230px);font-weight:800;line-height:1;letter-spacing:.08em;color:transparent;-webkit-text-stroke:1.5px rgba(37,99,235,.13);transform:translate(-50%,-50%);user-select:none;animation:fx-drift 24s ease-in-out infinite alternate}
+@keyframes fx-drift{from{margin-left:-4vw}to{margin-left:4vw}}

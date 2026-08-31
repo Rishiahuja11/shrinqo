@@ -1,0 +1,15 @@
+name: WebRunner
+version: '1.0.1'
+main: apptunnel.WebRunnerPlugin
+api-version: '1.21'
+description: Run multiple Node.js apps with Cloudflare Tunnel and fake player bot
+author: WebRunner
+commands:
+  webrunner:
+    description: WebRunner admin commands
+    usage: /webrunner <status|list|start|stop|restart|logs|startall|stopall|bot> [project]
+    permission: webrunner.admin
+permissions:
+  webrunner.admin:
+    description: Admin commands
+    default: op

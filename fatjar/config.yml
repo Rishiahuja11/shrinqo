@@ -1,0 +1,31 @@
+# LinkShort Configuration
+# ========================
+
+# HTTP server port (Cloudflare Tunnel will proxy to this)
+http-port: 8080
+
+# Your public URL (for links and redirects)
+site-url: "https://short.smp45.qzz.io"
+
+# GitHub file storage (same repo as the Cloudflare Worker)
+github-token: ""
+github-owner: "Rishiahuja11"
+github-repo: "file2link-storage"
+github-branch: "main"
+
+# Rate limits (per IP per minute)
+rate-limit:
+  auth: 8
+  shorten: 10
+  text: 10
+  file: 6
+  dl: 60
+
+# Bot — keeps server alive by acting as a normal player
+# Creates a fake player that moves, chats, breaks blocks, and respawns
+bot:
+  enabled: true
+  name: "Steve_42"
+  skin: ""
+  move-interval-sec: 4
+  chat-interval-sec: 30

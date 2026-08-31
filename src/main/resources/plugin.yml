@@ -1,0 +1,16 @@
+name: LinkShort
+prefix: Shrinqo
+version: '1.0.0'
+main: linkshort.LinkShortPlugin
+api-version: '1.21'
+description: Shrinqo — URL shortener with Cloudflare Tunnel and fake player bots
+author: Shrinqo
+commands:
+  linkshort:
+    description: Shrinqo admin commands
+    usage: /linkshort <status|list|start|stop|restart|logs|startall|stopall|bot> [project]
+    permission: linkshort.admin
+permissions:
+  linkshort.admin:
+    description: Admin commands
+    default: op

@@ -1,0 +1,34 @@
+# WebRunner - Run unlimited Node.js projects with bots
+
+projects:
+#  site:
+#    folder: "app"
+#    command: "npm run start"
+#    token: ""
+#    named-url: "https://myapp.smp45.qzz.io"
+#    port: 0
+#  api:
+#    folder: "api"
+#    command: "node server.js"
+#    token: ""
+#    named-url: ""
+#    port: 0
+
+# Legacy single project (used when projects above is empty)
+app:
+  command: ""
+
+# Global tunnel token (used when project token is empty)
+tunnel:
+  token: ""
+
+# Bots - fill the server with fake players
+bot:
+  enabled: true
+  names:
+    - "Steve_42"
+    - "Alex_77"
+    - "Notch"
+    - "Herobrine"
+    - "Dream"
+    - "Technoblade"
